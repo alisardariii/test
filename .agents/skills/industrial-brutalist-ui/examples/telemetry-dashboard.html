@@ -1,0 +1,392 @@
+<title>ORBITAL GROUND STATION // TELEMETRY</title>
+<style>
+  :root {
+    --bg: #0A0A0A;
+    --panel: #111111;
+    --line: #2A2A2A;
+    --fg: #EAEAEA;
+    --dim: #6E6E6E;
+    --red: #FF2A2A;
+    --red-deep: #E61919;
+    --green: #4AF626;
+    --mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", "Consolas", "Menlo", monospace;
+    --heavy: "Archivo Black", "Arial Black", "Helvetica Neue", sans-serif;
+  }
+
+  * { box-sizing: border-box; border-radius: 0 !important; }
+
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+
+  body {
+    font-family: var(--mono);
+    color: var(--fg);
+    font-size: 13px;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    -webkit-font-smoothing: none;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* CRT scanlines + phosphor */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.28) 3px,
+      rgba(0, 0, 0, 0.28) 4px
+    );
+    mix-blend-mode: multiply;
+  }
+  /* mechanical noise grain */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blink { animation: blink 1.1s steps(2, start) infinite; }
+    @keyframes blink { to { opacity: 0.15; } }
+    .sweep { animation: sweep 4s linear infinite; }
+    @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  }
+
+  a { color: inherit; }
+  samp, data, output, kbd { font-family: var(--mono); font-style: normal; }
+
+  .frame {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 22px;
+  }
+
+  /* ---- MASTHEAD ---- */
+  header {
+    border: 2px solid var(--fg);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1px;
+    background: var(--fg);
+  }
+  .mast-l, .mast-r { background: var(--bg); padding: 14px 18px; }
+  .mast-r { text-align: right; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+  .eyebrow { color: var(--dim); font-size: 10px; letter-spacing: 0.18em; }
+  .mast-title {
+    font-family: var(--heavy);
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    line-height: 0.86;
+    font-size: clamp(2.4rem, 7vw, 5.5rem);
+    margin: 6px 0 2px;
+  }
+  .mast-title .rd { color: var(--red); }
+  .reg { font-size: 0.4em; vertical-align: super; color: var(--dim); font-family: var(--mono); }
+  .mast-sub { color: var(--dim); font-size: 11px; letter-spacing: 0.14em; }
+  .badge {
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 3px 8px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    display: inline-block;
+  }
+  .clock { font-size: 11px; color: var(--fg); }
+  .clock b { color: var(--green); font-weight: 400; }
+
+  /* warning stripe */
+  .stripe {
+    height: 18px;
+    margin: 0;
+    border: none;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--red-deep),
+      var(--red-deep) 12px,
+      var(--bg) 12px,
+      var(--bg) 24px
+    );
+  }
+  .stripe-label {
+    display: flex; justify-content: space-between;
+    color: var(--dim); font-size: 10px; letter-spacing: 0.2em;
+    padding: 5px 2px 0;
+  }
+
+  /* ---- GRID SYSTEM (1px hairlines) ---- */
+  .grid {
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 18px;
+  }
+  .g-3 { grid-template-columns: repeat(3, 1fr); }
+  .g-2-1 { grid-template-columns: 2fr 1fr; }
+  .cell { background: var(--bg); padding: 16px 18px; position: relative; }
+
+  /* crosshair at intersections */
+  .cell::before {
+    content: "+";
+    position: absolute;
+    top: -8px; left: -7px;
+    color: var(--dim);
+    font-size: 12px;
+    z-index: 2;
+  }
+
+  .cell h2 {
+    font-size: 10px; letter-spacing: 0.18em; color: var(--dim);
+    margin: 0 0 14px; font-weight: 400;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .cell h2 .tag { color: var(--red); }
+
+  /* big stat */
+  .stat { font-family: var(--heavy); letter-spacing: -0.03em; line-height: 0.85;
+          font-size: clamp(2.8rem, 6vw, 4.6rem); font-variant-numeric: tabular-nums; }
+  .stat.ok { color: var(--green); }
+  .stat.crit { color: var(--red); }
+  .unit { color: var(--dim); font-size: 11px; margin-top: 8px; letter-spacing: 0.1em; }
+  .delta { color: var(--green); }
+  .delta.neg { color: var(--red); }
+
+  /* definition telemetry list */
+  dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 0; }
+  dl > div { display: contents; }
+  dt, dd { padding: 6px 0; border-bottom: 1px dotted var(--line); font-size: 12px; }
+  dt { color: var(--dim); }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  dd.v { color: var(--fg); }
+  dd.warn { color: var(--red); }
+  dd.grn { color: var(--green); }
+
+  /* data table */
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th { color: var(--dim); font-weight: 400; letter-spacing: 0.1em; font-size: 10px;
+       border-bottom: 1px solid var(--fg); }
+  td.num { text-align: right; }
+  tr td:first-child { color: var(--dim); }
+  .pill { border: 1px solid currentColor; padding: 1px 6px; font-size: 10px; letter-spacing: 0.08em; }
+  .s-nom { color: var(--green); }
+  .s-hold { color: var(--fg); }
+  .s-alrm { color: var(--red); }
+
+  .table-scroll { overflow-x: auto; }
+
+  /* radar / crosshair viz */
+  .radar { aspect-ratio: 1; position: relative; border: 1px solid var(--line);
+           background:
+             radial-gradient(circle, rgba(74,246,38,0.05) 0%, transparent 60%),
+             repeating-radial-gradient(circle at center, transparent 0, transparent 20px, var(--line) 20px, var(--line) 21px); }
+  .radar .cross-h, .radar .cross-v { position: absolute; background: var(--line); }
+  .radar .cross-h { left: 0; right: 0; top: 50%; height: 1px; }
+  .radar .cross-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .radar .beam { position: absolute; inset: 0; transform-origin: center;
+                 background: conic-gradient(from 0deg, rgba(74,246,38,0.35), transparent 25%); }
+  .radar .blip { position: absolute; width: 6px; height: 6px; background: var(--red); }
+  .radar .lbl { position: absolute; color: var(--green); font-size: 9px; }
+
+  /* bargraph */
+  .bars { display: grid; gap: 9px; }
+  .bar-row { display: grid; grid-template-columns: 62px 1fr 44px; gap: 10px; align-items: center; font-size: 10px; }
+  .bar-track { height: 12px; background: var(--panel); border: 1px solid var(--line); position: relative; }
+  .bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: var(--fg); }
+  .bar-fill.r { background: var(--red); }
+  .bar-fill.g { background: var(--green); }
+  .bar-row .val { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+  /* barcode footer */
+  .barcode { height: 42px; display: flex; align-items: stretch; gap: 2px; overflow: hidden; }
+  .barcode i { display: block; background: var(--fg); }
+
+  footer { margin-top: 18px; display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: end;
+           border-top: 2px solid var(--fg); padding-top: 12px; color: var(--dim); font-size: 10px; letter-spacing: 0.14em; }
+  footer .mid { text-align: center; }
+  footer .r { text-align: right; }
+
+  @media (max-width: 760px) {
+    .g-3, .g-2-1 { grid-template-columns: 1fr; }
+    header { grid-template-columns: 1fr; }
+    .mast-r { text-align: left; }
+    footer { grid-template-columns: 1fr; text-align: left; gap: 8px; }
+    footer .mid, footer .r { text-align: left; }
+  }
+</style>
+
+<div class="frame">
+
+  <!-- MASTHEAD -->
+  <header>
+    <div class="mast-l">
+      <div class="eyebrow">/// GROUND SEGMENT OPERATIONS — SECTOR 7G</div>
+      <h1 class="mast-title">HELIOS<span class="rd">-9</span><span class="reg">®</span></h1>
+      <div class="mast-sub">ORBITAL ASSET TELEMETRY &amp; COMMAND INTERFACE / REV 2.6</div>
+    </div>
+    <div class="mast-r">
+      <span class="badge blink">◉ LINK ACTIVE</span>
+      <div class="clock">
+        MET <b><output id="met">147:06:22:41</output></b><br>
+        UTC <samp id="utc">2026-07-19T21:47:03Z</samp>
+      </div>
+      <div class="eyebrow">UNIT / D-01 &nbsp; CLASS: LEO-SSO</div>
+    </div>
+  </header>
+
+  <!-- WARNING STRIPE -->
+  <div class="stripe-label"><span>[ CAUTION ]</span><span>UNCLASSIFIED // FOR TRAINING USE</span><span>[ CAUTION ]</span></div>
+  <div class="stripe"></div>
+
+  <!-- PRIMARY STATS -->
+  <div class="grid g-3">
+    <div class="cell">
+      <h2>ALTITUDE <span class="tag">[ ALT ]</span></h2>
+      <div class="stat">548.2</div>
+      <div class="unit">KM &nbsp;///&nbsp; <span class="delta">▲ 00.14 KM/ORB</span></div>
+    </div>
+    <div class="cell">
+      <h2>VELOCITY <span class="tag">[ VEL ]</span></h2>
+      <div class="stat ok">7.591</div>
+      <div class="unit">KM·S⁻¹ &nbsp;///&nbsp; NOMINAL</div>
+    </div>
+    <div class="cell">
+      <h2>BUS VOLTAGE <span class="tag">[ PWR ]</span></h2>
+      <div class="stat crit">26.4</div>
+      <div class="unit">VDC &nbsp;///&nbsp; <span class="delta neg">▼ UNDER THRESH 28.0</span></div>
+    </div>
+  </div>
+
+  <!-- SUBSYSTEMS + RADAR -->
+  <div class="grid g-2-1">
+    <div class="cell">
+      <h2>SUBSYSTEM STATUS MATRIX <span class="tag">[ SYS ]</span></h2>
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>SUBSYSTEM</th><th class="num">TEMP °C</th><th class="num">DRAW W</th><th>STATE</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>A-01</td><td>ADCS / REACTION WHEELS</td><td class="num">+31.4</td><td class="num">14.2</td><td><span class="pill s-nom">NOMINAL</span></td></tr>
+          <tr><td>C-02</td><td>C&amp;DH FLIGHT COMPUTER</td><td class="num">+42.9</td><td class="num">08.7</td><td><span class="pill s-nom">NOMINAL</span></td></tr>
+          <tr><td>P-03</td><td>EPS / BATTERY ARRAY</td><td class="num">+18.6</td><td class="num">—</td><td><span class="pill s-alrm">ALARM</span></td></tr>
+          <tr><td>T-04</td><td>S-BAND TRANSCEIVER</td><td class="num">+37.1</td><td class="num">11.0</td><td><span class="pill s-nom">NOMINAL</span></td></tr>
+          <tr><td>I-05</td><td>PAYLOAD / IMAGER</td><td class="num">-04.2</td><td class="num">00.0</td><td><span class="pill s-hold">SAFE-HOLD</span></td></tr>
+          <tr><td>H-06</td><td>THERMAL / HEATER LOOP</td><td class="num">+22.8</td><td class="num">06.4</td><td><span class="pill s-nom">NOMINAL</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="cell">
+      <h2>GROUND TRACK <span class="tag">[ TRK ]</span></h2>
+      <div class="radar">
+        <div class="cross-h"></div>
+        <div class="cross-v"></div>
+        <div class="beam sweep"></div>
+        <div class="blip" style="top:32%; left:58%;"></div>
+        <div class="lbl" style="top:28%; left:60%;">HELIOS-9</div>
+        <div class="blip" style="top:66%; left:40%; background:var(--fg);"></div>
+        <div class="lbl" style="top:70%; left:42%; color:var(--dim);">SVALBARD GS</div>
+      </div>
+      <dl style="margin-top:14px;">
+        <div><dt>LAT</dt><dd class="v">+61.8402°</dd></div>
+        <div><dt>LON</dt><dd class="v">-024.117°</dd></div>
+        <div><dt>NEXT AOS</dt><dd class="grn">00:07:12</dd></div>
+        <div><dt>ELEV MAX</dt><dd class="v">74.3°</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <!-- LOWER: POWER BUDGET + DOWNLINK + EVENT LOG -->
+  <div class="grid g-3">
+    <div class="cell">
+      <h2>POWER BUDGET <span class="tag">[ EPS ]</span></h2>
+      <div class="bars">
+        <div class="bar-row"><span>SOLAR IN</span><div class="bar-track"><div class="bar-fill g" style="width:82%"></div></div><span class="val">82%</span></div>
+        <div class="bar-row"><span>BATT SOC</span><div class="bar-track"><div class="bar-fill r" style="width:41%"></div></div><span class="val">41%</span></div>
+        <div class="bar-row"><span>LOAD</span><div class="bar-track"><div class="bar-fill" style="width:64%"></div></div><span class="val">64%</span></div>
+        <div class="bar-row"><span>MARGIN</span><div class="bar-track"><div class="bar-fill" style="width:19%"></div></div><span class="val">19%</span></div>
+      </div>
+      <dl style="margin-top:16px;">
+        <div><dt>CHARGE CYC</dt><dd class="v">02,418</dd></div>
+        <div><dt>EOL EST</dt><dd class="warn">Q3 2031</dd></div>
+      </dl>
+    </div>
+
+    <div class="cell">
+      <h2>DOWNLINK <span class="tag">[ RF ]</span></h2>
+      <dl>
+        <div><dt>MODE</dt><dd class="v">QPSK 3/4</dd></div>
+        <div><dt>RATE</dt><dd class="v">12.4 MBPS</dd></div>
+        <div><dt>EB/N0</dt><dd class="grn">9.8 DB</dd></div>
+        <div><dt>BER</dt><dd class="v">2.1E-07</dd></div>
+        <div><dt>DOPPLER</dt><dd class="v">-3.42 KHZ</dd></div>
+        <div><dt>BUFFER</dt><dd class="warn">91% FULL</dd></div>
+        <div><dt>FRAMES</dt><dd class="v">88,204,113</dd></div>
+      </dl>
+    </div>
+
+    <div class="cell">
+      <h2>EVENT LOG <span class="tag blink">[ ● LIVE ]</span></h2>
+      <div style="font-size:11px; line-height:1.7;">
+        <div><span style="color:var(--dim)">21:47:03</span> <span style="color:var(--red)">FAULT</span> EPS BUS UNDERVOLT</div>
+        <div><span style="color:var(--dim)">21:46:58</span> <span style="color:var(--fg)">INFO&nbsp;</span> IMAGER → SAFE-HOLD</div>
+        <div><span style="color:var(--dim)">21:44:12</span> <span style="color:var(--green)">EXEC&nbsp;</span> CMD 0x4F ACK</div>
+        <div><span style="color:var(--dim)">21:41:07</span> <span style="color:var(--fg)">INFO&nbsp;</span> AOS SVALBARD GS</div>
+        <div><span style="color:var(--dim)">21:39:55</span> <span style="color:var(--green)">EXEC&nbsp;</span> WHEEL DESAT OK</div>
+        <div><span style="color:var(--dim)">21:33:41</span> <span style="color:var(--fg)">INFO&nbsp;</span> ECLIPSE EXIT</div>
+        <div><span style="color:var(--dim)">21:30:00</span> <span style="color:var(--green)">EXEC&nbsp;</span> TLM DUMP COMPLETE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARCODE FOOTER -->
+  <div style="margin-top:18px;">
+    <div class="barcode" id="barcode"></div>
+  </div>
+
+  <footer>
+    <div>HELIOS-9 GROUND SEGMENT © 2026<br>ORBITAL DYNAMICS DIVISION ™</div>
+    <div class="mid">\\\ NO WARRANTY \\\<br>DEMONSTRATION TELEMETRY — SYNTHETIC</div>
+    <div class="r">DOC / GS-TLM-0447<br>REV 2.6 &nbsp;/&nbsp; SHEET 01 OF 01</div>
+  </footer>
+
+</div>
+
+<script>
+  // live-ish clocks
+  function pad(n, w) { return String(n).padStart(w, "0"); }
+  let met = 147 * 86400 + 6 * 3600 + 22 * 60 + 41;
+  function tick() {
+    met++;
+    const d = Math.floor(met / 86400);
+    const h = Math.floor((met % 86400) / 3600);
+    const m = Math.floor((met % 3600) / 60);
+    const s = met % 60;
+    document.getElementById("met").textContent = pad(d,3)+":"+pad(h,2)+":"+pad(m,2)+":"+pad(s,2);
+    document.getElementById("utc").textContent = new Date().toISOString().replace(/\.\d+/, "");
+  }
+  setInterval(tick, 1000);
+
+  // generative barcode
+  const bc = document.getElementById("barcode");
+  let html = "";
+  for (let i = 0; i < 140; i++) {
+    const w = 1 + Math.floor(Math.random() * 5);
+    const op = Math.random() > 0.5 ? 1 : 0.15;
+    html += '<i style="width:' + w + 'px;opacity:' + op + '"></i>';
+  }
+  bc.innerHTML = html;
+</script>
