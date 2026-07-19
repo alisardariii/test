@@ -1,0 +1,512 @@
+<title>داشبورد گزارش رستوران — سفره‌خانه نار</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    color-scheme: light dark;
+    --paper: #f4f2ee;
+    --card: #fbfaf8;
+    --ink: #211d16;
+    --ink-soft: #6b6155;
+    --ink-faint: #9c9184;
+    --line: #e5e0d8;
+    --line-soft: #eeeae3;
+    --accent: #c8811d;
+    --accent-soft: #f0e0c6;
+    --good: #2f8f5b;
+    --good-soft: #dcefe3;
+    --warn: #c98a1a;
+    --warn-soft: #f5e9cf;
+    --crit: #c1443a;
+    --crit-soft: #f5dcd9;
+    --chart-1: #c8811d;
+    --chart-2: #7c8a3f;
+    --chart-3: #b0563b;
+    --chart-4: #d9b06a;
+    --shadow: 0 1px 2px rgba(33,29,22,.05), 0 8px 24px rgba(33,29,22,.05);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #17140f;
+      --card: #201c15;
+      --ink: #f2ede3;
+      --ink-soft: #b3a894;
+      --ink-faint: #82786a;
+      --line: #322c22;
+      --line-soft: #2a251d;
+      --accent: #e0a545;
+      --accent-soft: #3a2e17;
+      --good: #4bb079;
+      --good-soft: #1c2f24;
+      --warn: #dda63a;
+      --warn-soft: #33290f;
+      --crit: #db5f54;
+      --crit-soft: #331b18;
+      --chart-1: #e0a545;
+      --chart-2: #a3b45f;
+      --chart-3: #d5765a;
+      --chart-4: #e6c688;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #f4f2ee; --card: #fbfaf8; --ink: #211d16; --ink-soft: #6b6155;
+    --ink-faint: #9c9184; --line: #e5e0d8; --line-soft: #eeeae3; --accent: #c8811d;
+    --accent-soft: #f0e0c6; --good: #2f8f5b; --good-soft: #dcefe3; --warn: #c98a1a;
+    --warn-soft: #f5e9cf; --crit: #c1443a; --crit-soft: #f5dcd9;
+    --chart-1: #c8811d; --chart-2: #7c8a3f; --chart-3: #b0563b; --chart-4: #d9b06a;
+    --shadow: 0 1px 2px rgba(33,29,22,.05), 0 8px 24px rgba(33,29,22,.05);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #17140f; --card: #201c15; --ink: #f2ede3; --ink-soft: #b3a894;
+    --ink-faint: #82786a; --line: #322c22; --line-soft: #2a251d; --accent: #e0a545;
+    --accent-soft: #3a2e17; --good: #4bb079; --good-soft: #1c2f24; --warn: #dda63a;
+    --warn-soft: #33290f; --crit: #db5f54; --crit-soft: #331b18;
+    --chart-1: #e0a545; --chart-2: #a3b45f; --chart-3: #d5765a; --chart-4: #e6c688;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    direction: rtl;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Vazirmatn", "Segoe UI", Tahoma, system-ui, sans-serif;
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 30px) 60px; }
+
+  /* Top bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; padding-bottom: 22px;
+    border-bottom: 1px solid var(--line); margin-bottom: 26px;
+  }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .mark {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    background: linear-gradient(150deg, var(--accent), var(--chart-3));
+    display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 20px;
+    box-shadow: var(--shadow);
+  }
+  .brand h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .brand p { margin: 1px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .seg {
+    display: inline-flex; background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 3px; box-shadow: var(--shadow);
+  }
+  .seg button {
+    font: inherit; font-size: 13px; border: 0; background: transparent; color: var(--ink-soft);
+    padding: 6px 13px; border-radius: 7px; cursor: pointer; transition: .15s;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 600; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .themebtn {
+    font: inherit; font-size: 13px; cursor: pointer; background: var(--card);
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; color: var(--ink);
+    box-shadow: var(--shadow); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .themebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* KPI */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 17px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .kpi .lbl { font-size: 12.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 7px; }
+  .kpi .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .kpi .val {
+    font-size: 27px; font-weight: 800; letter-spacing: -.02em; margin: 9px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .sub { font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .trend { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .trend.up { color: var(--good); }
+  .trend.down { color: var(--crit); }
+  .spark { position: absolute; inset-inline-end: 0; bottom: 0; width: 96px; height: 40px; opacity: .9; }
+
+  /* Grid */
+  .grid { display: grid; gap: 16px; grid-template-columns: 2fr 1fr; }
+  .grid.two { grid-template-columns: 1fr 1fr; margin-top: 16px; }
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px 18px 16px;
+  }
+  .phead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .phead h2 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .phead .meta { font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  canvas { display: block; width: 100%; }
+
+  /* Top dishes */
+  .dish { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 11px; padding: 9px 0; }
+  .dish + .dish { border-top: 1px solid var(--line-soft); }
+  .rank { font-size: 13px; font-weight: 700; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .dish .name { font-size: 13.5px; }
+  .dish .bar { height: 6px; border-radius: 4px; background: var(--line-soft); margin-top: 5px; overflow: hidden; }
+  .dish .bar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+  .dish .qty { font-size: 13px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; text-align: end; }
+  .dish .qty small { display: block; font-weight: 500; color: var(--ink-faint); font-size: 11px; }
+
+  /* Table */
+  .tablewrap { overflow-x: auto; margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 460px; }
+  th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  th { font-size: 11.5px; font-weight: 600; color: var(--ink-faint); text-transform: none; }
+  td.num { font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill.good { color: var(--good); background: var(--good-soft); }
+  .pill.warn { color: var(--warn); background: var(--warn-soft); }
+  .pill.crit { color: var(--crit); background: var(--crit-soft); }
+
+  /* Tables occupancy */
+  .tables { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 9px; margin-top: 6px; }
+  .tbl {
+    aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--line);
+    display: grid; place-content: center; text-align: center; gap: 2px; font-size: 12px;
+  }
+  .tbl b { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tbl small { font-size: 10.5px; color: var(--ink-soft); }
+  .tbl.free { background: var(--good-soft); border-color: transparent; }
+  .tbl.free b { color: var(--good); }
+  .tbl.busy { background: var(--accent-soft); border-color: transparent; }
+  .tbl.busy b { color: var(--accent); }
+  .tbl.wait { background: var(--crit-soft); border-color: transparent; }
+  .tbl.wait b { color: var(--crit); }
+
+  .foot { margin-top: 30px; font-size: 12px; color: var(--ink-faint); text-align: center; }
+
+  @media (max-width: 900px) {
+    .grid, .grid.two { grid-template-columns: 1fr; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .kpis { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">نار</div>
+      <div>
+        <h1>سفره‌خانه نار — گزارش عملکرد</h1>
+        <p>شعبهٔ سعادت‌آباد · به‌روزرسانی: امروز ساعت ۲۱:۴۰</p>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="بازهٔ زمانی">
+        <button aria-pressed="false">امروز</button>
+        <button aria-pressed="true">۷ روز</button>
+        <button aria-pressed="false">۳۰ روز</button>
+      </div>
+      <button class="themebtn" id="themebtn" aria-label="تغییر تم">
+        <span id="themeicon">◐</span><span id="themetext">تم تیره</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="kpis" aria-label="شاخص‌های کلیدی">
+    <div class="kpi">
+      <div class="lbl"><span class="dot" style="background:var(--accent)"></span>درآمد کل (۷ روز)</div>
+      <div class="val">۴۸۷٫۲ <span style="font-size:15px;font-weight:600;color:var(--ink-soft)">م تومان</span></div>
+      <div class="sub"><span class="trend up">▲ ۱۲٫۴٪</span> نسبت به هفتهٔ قبل</div>
+      <canvas class="spark" data-spark="rev" aria-hidden="true"></canvas>
+    </div>
+    <div class="kpi">
+      <div class="lbl"><span class="dot" style="background:var(--chart-2)"></span>تعداد سفارش</div>
+      <div class="val">۱٬۳۸۴</div>
+      <div class="sub"><span class="trend up">▲ ۸٫۱٪</span> ۱۹۸ سفارش امروز</div>
+      <canvas class="spark" data-spark="ord" aria-hidden="true"></canvas>
+    </div>
+    <div class="kpi">
+      <div class="lbl"><span class="dot" style="background:var(--chart-3)"></span>میانگین هر فاکتور</div>
+      <div class="val">۳۵۲ <span style="font-size:15px;font-weight:600;color:var(--ink-soft)">ه تومان</span></div>
+      <div class="sub"><span class="trend up">▲ ۴٫۰٪</span> سبد خرید بزرگ‌تر</div>
+      <canvas class="spark" data-spark="avg" aria-hidden="true"></canvas>
+    </div>
+    <div class="kpi">
+      <div class="lbl"><span class="dot" style="background:var(--crit)"></span>نرخ چرخش میز</div>
+      <div class="val">۳٫۸<span style="font-size:15px;font-weight:600;color:var(--ink-soft)"> بار/میز</span></div>
+      <div class="sub"><span class="trend down">▼ ۲٫۲٪</span> اوج شلوغی ۲۱:۰۰</div>
+      <canvas class="spark" data-spark="trn" aria-hidden="true"></canvas>
+    </div>
+  </section>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="phead">
+        <h2>روند درآمد روزانه</h2>
+        <span class="meta">شنبه تا جمعه · میلیون تومان</span>
+      </div>
+      <canvas id="revChart" height="230" aria-label="نمودار روند درآمد روزانه"></canvas>
+      <div class="legend">
+        <span><i style="background:var(--chart-1)"></i> این هفته</span>
+        <span><i style="background:var(--line)"></i> هفتهٔ گذشته</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2>سهم دسته‌ها</h2><span class="meta">از کل فروش</span></div>
+      <canvas id="donut" height="200" aria-label="نمودار سهم دسته‌ها"></canvas>
+      <div class="legend" id="donutLegend"></div>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="panel">
+      <div class="phead"><h2>فروش بر حسب ساعت</h2><span class="meta">امروز</span></div>
+      <canvas id="hours" height="200" aria-label="نمودار فروش بر حسب ساعت"></canvas>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2>پرفروش‌ترین غذاها</h2><span class="meta">۷ روز اخیر</span></div>
+      <div id="dishes"></div>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="panel">
+      <div class="phead"><h2>سفارش‌های اخیر</h2><span class="meta">لحظه‌ای</span></div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>فاکتور</th><th>میز</th><th>مبلغ</th><th>روش پرداخت</th><th>وضعیت</th></tr>
+          </thead>
+          <tbody id="orders"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2>وضعیت میزها</h2><span class="meta">۲۴ میز · ۱۵ فعال</span></div>
+      <div class="tables" id="tables"></div>
+      <div class="legend" style="margin-top:14px">
+        <span><i style="background:var(--good)"></i> خالی</span>
+        <span><i style="background:var(--accent)"></i> پذیرایی</span>
+        <span><i style="background:var(--crit)"></i> انتظار تسویه</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">داده‌های این داشبورد نمونه و آزمایشی هستند · ساخته‌شده با اسکیل design-taste-frontend</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var fa = "۰۱۲۳۴۵۶۷۸۹";
+  function toFa(n) { return String(n).replace(/[0-9]/g, function (d) { return fa[+d]; }); }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- data ----
+  var revThis = [58, 44, 51, 63, 79, 96, 96];
+  var revPrev = [52, 47, 49, 55, 68, 84, 88];
+  var days = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
+  var hoursData = [4, 2, 9, 22, 31, 18, 12, 20, 34, 47, 41, 26];
+  var hoursLbl = ["۱۲", "۱۳", "۱۴", "۱۵", "۱۶", "۱۷", "۱۸", "۱۹", "۲۰", "۲۱", "۲۲", "۲۳"];
+  var cats = [
+    { name: "کباب و برنج", val: 46, c: "--chart-1" },
+    { name: "خورشت‌ها", val: 24, c: "--chart-2" },
+    { name: "پیش‌غذا", val: 16, c: "--chart-3" },
+    { name: "نوشیدنی و دسر", val: 14, c: "--chart-4" }
+  ];
+  var dishes = [
+    { n: "چلوکباب کوبیده", q: 312, p: 100 },
+    { n: "جوجه‌کباب زعفرانی", q: 268, p: 86 },
+    { n: "زرشک‌پلو با مرغ", q: 197, p: 63 },
+    { n: "قورمه‌سبزی", q: 154, p: 49 },
+    { n: "چلوکباب سلطانی", q: 121, p: 39 },
+    { n: "میرزاقاسمی", q: 88, p: 28 }
+  ];
+  var orders = [
+    { id: "۸۳۹۲", t: "۱۴", amt: "۴۸۵٬۰۰۰", pay: "کارت‌خوان", st: "good", stx: "تسویه شد" },
+    { id: "۸۳۹۱", t: "۰۷", amt: "۱٬۲۴۰٬۰۰۰", pay: "آنلاین", st: "good", stx: "تسویه شد" },
+    { id: "۸۳۹۰", t: "۲۲", amt: "۳۱۰٬۰۰۰", pay: "نقدی", st: "warn", stx: "در حال آماده‌سازی" },
+    { id: "۸۳۸۹", t: "۱۹", amt: "۶۷۵٬۰۰۰", pay: "کارت‌خوان", st: "warn", stx: "سرو شد" },
+    { id: "۸۳۸۸", t: "۰۳", amt: "۹۲۰٬۰۰۰", pay: "آنلاین", st: "crit", stx: "انتظار تسویه" },
+    { id: "۸۳۸۷", t: "۱۱", amt: "۲۴۵٬۰۰۰", pay: "نقدی", st: "good", stx: "تسویه شد" }
+  ];
+  var tableStates = ["busy","busy","free","busy","wait","busy","free","busy","busy","free","busy","wait","busy","free","busy","busy","free","busy","wait","free","busy","busy","free","busy"];
+  var stName = { free: "خالی", busy: "پذیرایی", wait: "تسویه" };
+
+  // ---- render static lists ----
+  function renderDishes() {
+    var el = document.getElementById("dishes");
+    el.innerHTML = dishes.map(function (d, i) {
+      return '<div class="dish"><span class="rank">' + toFa(i + 1) + '</span>' +
+        '<div><div class="name">' + d.n + '</div><div class="bar"><i style="width:' + d.p + '%"></i></div></div>' +
+        '<div class="qty">' + toFa(d.q) + '<small>پرس</small></div></div>';
+    }).join("");
+  }
+  function renderOrders() {
+    document.getElementById("orders").innerHTML = orders.map(function (o) {
+      return '<tr><td class="num">#' + o.id + '</td><td class="num">' + o.t + '</td>' +
+        '<td class="num">' + o.amt + '</td><td>' + o.pay + '</td>' +
+        '<td><span class="pill ' + o.st + '">' + o.stx + '</span></td></tr>';
+    }).join("");
+  }
+  function renderTables() {
+    document.getElementById("tables").innerHTML = tableStates.map(function (s, i) {
+      return '<div class="tbl ' + s + '"><b>' + toFa(i + 1) + '</b><small>' + stName[s] + '</small></div>';
+    }).join("");
+  }
+  function renderDonutLegend() {
+    document.getElementById("donutLegend").innerHTML = cats.map(function (c) {
+      return '<span><i style="background:' + css(c.c) + '"></i>' + c.name + ' ' + toFa(c.val) + '٪</span>';
+    }).join("");
+  }
+
+  // ---- canvas helpers ----
+  function setup(canvas, h) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = canvas.clientWidth || canvas.parentElement.clientWidth;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function drawSparks() {
+    document.querySelectorAll("[data-spark]").forEach(function (cv) {
+      var data = { rev: revThis, ord: [180,140,160,175,190,196,198], avg: [330,325,340,345,348,350,352], trn: [4.1,4.0,3.9,3.9,3.8,3.8,3.8] }[cv.dataset.spark];
+      var s = setup(cv, 40), ctx = s.ctx, w = s.w, hh = s.h;
+      var min = Math.min.apply(null, data), max = Math.max.apply(null, data), rng = (max - min) || 1;
+      var pad = 4;
+      function X(i){ return pad + i * (w - 2*pad) / (data.length - 1); }
+      function Y(v){ return hh - pad - (v - min) / rng * (hh - 2*pad); }
+      var grad = ctx.createLinearGradient(0, 0, 0, hh);
+      grad.addColorStop(0, css("--accent") + "55"); grad.addColorStop(1, css("--accent") + "00");
+      ctx.beginPath(); ctx.moveTo(X(0), hh - pad);
+      data.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
+      ctx.lineTo(X(data.length - 1), hh - pad); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+      ctx.beginPath(); data.forEach(function (v, i) { i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)); });
+      ctx.strokeStyle = css("--accent"); ctx.lineWidth = 1.6; ctx.lineJoin = "round"; ctx.stroke();
+    });
+  }
+
+  function drawRev() {
+    var cv = document.getElementById("revChart");
+    var s = setup(cv, 230), ctx = s.ctx, w = s.w, h = s.h;
+    var padL = 30, padR = 10, padT = 14, padB = 24;
+    var max = 110;
+    function X(i){ return w - padR - i * (w - padL - padR) / (days.length - 1); } // RTL: index 0 on right
+    function Y(v){ return h - padB - (v / max) * (h - padT - padB); }
+    // grid
+    ctx.strokeStyle = css("--line-soft"); ctx.lineWidth = 1; ctx.fillStyle = css("--ink-faint");
+    ctx.font = "11px Vazirmatn, sans-serif"; ctx.textAlign = "center";
+    for (var g = 0; g <= 4; g++) {
+      var yv = g * (max / 4), y = Y(yv);
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+      ctx.textAlign = "left"; ctx.fillText(toFa(yv), 2, y + 3);
+    }
+    ctx.textAlign = "center";
+    days.forEach(function (d, i) { ctx.fillText(d, X(i), h - 7); });
+    // prev week line
+    ctx.beginPath(); revPrev.forEach(function (v, i) { i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)); });
+    ctx.strokeStyle = css("--line"); ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+    // this week area
+    var grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+    grad.addColorStop(0, css("--chart-1") + "38"); grad.addColorStop(1, css("--chart-1") + "00");
+    ctx.beginPath(); ctx.moveTo(X(0), h - padB);
+    revThis.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
+    ctx.lineTo(X(revThis.length - 1), h - padB); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    // this week line
+    ctx.beginPath(); revThis.forEach(function (v, i) { i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)); });
+    ctx.strokeStyle = css("--chart-1"); ctx.lineWidth = 2.6; ctx.lineJoin = "round"; ctx.stroke();
+    // points + emphasized endpoint
+    revThis.forEach(function (v, i) {
+      ctx.beginPath(); ctx.arc(X(i), Y(v), i === revThis.length - 1 ? 5 : 3, 0, 7);
+      ctx.fillStyle = css("--card"); ctx.fill();
+      ctx.lineWidth = i === revThis.length - 1 ? 3 : 2; ctx.strokeStyle = css("--chart-1"); ctx.stroke();
+    });
+  }
+
+  function drawHours() {
+    var cv = document.getElementById("hours");
+    var s = setup(cv, 200), ctx = s.ctx, w = s.w, h = s.h;
+    var padL = 8, padR = 8, padT = 10, padB = 22;
+    var max = Math.max.apply(null, hoursData);
+    var n = hoursData.length, gap = 7;
+    var bw = (w - padL - padR - gap * (n - 1)) / n;
+    ctx.font = "10px Vazirmatn, sans-serif"; ctx.textAlign = "center";
+    hoursData.forEach(function (v, i) {
+      var x = w - padR - (i + 1) * bw - i * gap; // RTL fill from right
+      var bh = (v / max) * (h - padT - padB);
+      var y = h - padB - bh;
+      var peak = v === max;
+      ctx.fillStyle = peak ? css("--accent") : css("--accent") + "44";
+      var r = 4;
+      ctx.beginPath();
+      ctx.moveTo(x, y + bh); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+      ctx.lineTo(x + bw - r, y); ctx.arcTo(x + bw, y, x + bw, y + r, r);
+      ctx.lineTo(x + bw, y + bh); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = css("--ink-faint");
+      ctx.fillText(hoursLbl[i], x + bw / 2, h - 7);
+    });
+  }
+
+  function drawDonut() {
+    var cv = document.getElementById("donut");
+    var s = setup(cv, 200), ctx = s.ctx, w = s.w, h = s.h;
+    var cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 8, r = R * 0.62;
+    var total = cats.reduce(function (a, c) { return a + c.val; }, 0);
+    var start = -Math.PI / 2;
+    cats.forEach(function (c) {
+      var ang = c.val / total * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, start, start + ang); ctx.closePath();
+      ctx.fillStyle = css(c.c); ctx.fill();
+      start += ang;
+    });
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fillStyle = css("--card"); ctx.fill();
+    ctx.textAlign = "center"; ctx.fillStyle = css("--ink");
+    ctx.font = "700 22px Vazirmatn, sans-serif"; ctx.fillText(toFa(1384), cx, cy + 2);
+    ctx.font = "11px Vazirmatn, sans-serif"; ctx.fillStyle = css("--ink-soft");
+    ctx.fillText("سفارش هفته", cx, cy + 18);
+  }
+
+  function drawAll() { drawSparks(); drawRev(); drawHours(); drawDonut(); renderDonutLegend(); }
+
+  renderDishes(); renderOrders(); renderTables();
+  drawAll();
+
+  var pending = false;
+  window.addEventListener("resize", function () {
+    if (pending) return; pending = true;
+    requestAnimationFrame(function () { pending = false; drawAll(); });
+  });
+
+  // ---- theme toggle ----
+  var btn = document.getElementById("themebtn");
+  function sysDark() { return matchMedia("(prefers-color-scheme: dark)").matches; }
+  function isDark() {
+    var attr = document.documentElement.getAttribute("data-theme");
+    return attr ? attr === "dark" : sysDark();
+  }
+  function syncLabel() {
+    var d = isDark();
+    document.getElementById("themetext").textContent = d ? "تم روشن" : "تم تیره";
+    document.getElementById("themeicon").textContent = d ? "☀" : "◐";
+  }
+  btn.addEventListener("click", function () {
+    document.documentElement.setAttribute("data-theme", isDark() ? "light" : "dark");
+    syncLabel(); requestAnimationFrame(drawAll);
+  });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+    if (!document.documentElement.getAttribute("data-theme")) { syncLabel(); drawAll(); }
+  });
+  syncLabel();
+})();
+</script>
