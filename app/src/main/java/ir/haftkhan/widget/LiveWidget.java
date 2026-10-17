@@ -183,14 +183,18 @@ public class LiveWidget extends AppWidgetProvider {
 
     // اندازه‌ی متن‌ها به نسبت اندازه‌ی واقعی ویجت (گوشی و تبلت)
     static void scale(Context ctx, RemoteViews v, Bundle o) {
-        int w = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
-        int h = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+        int w = 0, h = 0;
+        if (o != null) {
+            w = Math.max(o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0), o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0));
+            h = Math.max(o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0), o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0));
+        }
         if (w <= 0) w = 150;
         if (h <= 0) h = 150;
-        float s = Math.min(w, h) / 150f;
+        // محتوا حدود ۸ خط ارتفاع دارد؛ اندازه را از هر دو بعد می‌گیریم تا کادر پر شود
+        float s = Math.min(w / 150f, h / 140f);
         if (s < 0.8f) s = 0.8f;
-        if (s > 3f) s = 3f;
-        float amount = Math.min(22f * s, w / 6.5f);
+        if (s > 5f) s = 5f;
+        float amount = Math.min(24f * s, w / 6.2f);
         int U = TypedValue.COMPLEX_UNIT_DIP;
         v.setTextViewTextSize(R.id.refresh, U, 15f * s);
         v.setTextViewTextSize(R.id.title, U, 11f * s);
