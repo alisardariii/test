@@ -1,11 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageView
+        android:id="@+id/bgfill"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/bg_fill" />
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/bg_shade" />
+<LinearLayout
+    android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:background="@drawable/bg"
     android:padding="10dp">
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="⟳"
-            android:textColor="#A9B8B1"
+            android:textColor="#E6EEEA"
             android:textSize="15sp"
             android:paddingLeft="0dp"
             android:paddingRight="6dp" />
@@ -29,7 +43,7 @@
             android:layout_height="wrap_content"
             android:gravity="right"
             android:text="هفت‌خوان"
-            android:textColor="#E0B24A"
+            android:textColor="#FFE3A0"
             android:textSize="11sp"
             android:maxLines="1"
             android:textStyle="bold" />
@@ -51,7 +65,7 @@
         android:layout_height="wrap_content"
         android:gravity="right"
         android:text="تومان"
-        android:textColor="#A9B8B1"
+        android:textColor="#E6EEEA"
         android:textSize="10sp" />
     <TextView
         android:id="@+id/pct"
@@ -60,7 +74,7 @@
         android:gravity="right"
         android:layout_marginTop="3dp"
         android:text=""
-        android:textColor="#A9B8B1"
+        android:textColor="#E6EEEA"
         android:textSize="11sp"
         android:maxLines="2" />
     <TextView
@@ -69,7 +83,7 @@
         android:layout_height="wrap_content"
         android:gravity="right"
         android:text="برای تنظیم، اپ «گزارش زنده هفت‌خوان» را باز کنید"
-        android:textColor="#A9B8B1"
+        android:textColor="#E6EEEA"
         android:textSize="11sp"
         android:maxLines="2" />
     <TextView
@@ -78,7 +92,8 @@
         android:layout_height="wrap_content"
         android:gravity="right"
         android:text=""
-        android:textColor="#7F938B"
+        android:textColor="#C9D6D0"
         android:textSize="9sp"
         android:maxLines="1" />
 </LinearLayout>
+</FrameLayout>

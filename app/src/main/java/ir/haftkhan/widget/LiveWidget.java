@@ -94,6 +94,13 @@ public class LiveWidget extends AppWidgetProvider {
         }
     }
 
+    // رنگ ویجت بر اساس تعداد میزهای باز: آبی (خالی) ← سبز ← زرد ← قرمز (۱۵ میز و بیشتر)، آرام و پیوسته
+    static int tableColor(int n) {
+        float t = Math.max(0f, Math.min(1f, n / 15f));
+        float hue = 210f * (1f - t);
+        return Color.HSVToColor(new float[]{hue, 0.72f, 0.46f});
+    }
+
     static String fa(String s) {
         StringBuilder b = new StringBuilder();
         for (char ch : s.toCharArray()) b.append(ch >= '0' && ch <= '9' ? (char) ('۰' + (ch - '0')) : ch);
@@ -133,13 +140,15 @@ public class LiveWidget extends AppWidgetProvider {
         SharedPreferences p = ctx.getSharedPreferences(PREFS, 0);
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
         String last = p.getString("last", null);
+        v.setInt(R.id.bgfill, "setColorFilter", tableColor(0));
         if (last != null) {
             try {
                 JSONObject x = new JSONObject(last);
                 v.setTextViewText(R.id.title, "\u200Fهفت‌خوان\u200F · \u200F" + x.optString("now_t", ""));
                 v.setTextViewText(R.id.amount, x.optString("today_t", "—"));
                 v.setTextViewText(R.id.pct, "\u200F" + x.optString("pct_t", ""));
-                try { v.setTextColor(R.id.pct, Color.parseColor(x.optString("pct_color", "#A9B8B1"))); } catch (Exception ignored) {}
+                v.setTextColor(R.id.pct, Color.WHITE);
+                v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
                 String R2 = "\u200F";
                 v.setTextViewText(R.id.info, R2 + "فیش\u00A0" + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز\u00A0باز\u00A0" + x.optString("open_t", "") + R2);
             } catch (Exception ignored) {}
@@ -185,6 +194,6 @@ public class LiveWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.info, U, 11f * s);
         v.setTextViewTextSize(R.id.status, U, 9f * s);
         int pad = (int) (10f * s * ctx.getResources().getDisplayMetrics().density);
-        v.setViewPadding(R.id.root, pad, pad, pad, pad);
+        v.setViewPadding(R.id.content, pad, pad, pad, pad);
     }
 }
