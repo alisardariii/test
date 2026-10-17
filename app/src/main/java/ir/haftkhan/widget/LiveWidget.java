@@ -213,20 +213,21 @@ public class LiveWidget extends AppWidgetProvider {
 
         // اندازه‌ی متن‌ها بر اساس اندازه‌ی بلوک اصلی
         float mw = shape == 1 ? w * 0.55f : w, mh = shape == 2 ? h * 0.6f : h;
-        float s = Math.min(mw / 150f, mh / 140f);
+        // ارتفاع لازم برای ۶ خط متن + فاصله‌ها و کادرها حدود ۱۸۵ واحد است (در s=1)
+        float s = Math.min(mw / 175f, mh / 185f);
         if (s < 0.8f) s = 0.8f;
         if (s > 5f) s = 5f;
         int U = TypedValue.COMPLEX_UNIT_DIP;
         v.setTextViewTextSize(R.id.refresh, U, 15f * s);
         v.setTextViewTextSize(R.id.title, U, 11f * s);
-        v.setTextViewTextSize(R.id.amount, U, Math.min(24f * s, mw / 6.6f));
+        v.setTextViewTextSize(R.id.amount, U, Math.min(24f * s, (mw - 36f * Math.min(s, 3f)) / 6.8f));
         v.setTextViewTextSize(R.id.unit, U, 10f * s);
         v.setTextViewTextSize(R.id.pct, U, 11f * s);
         v.setTextViewTextSize(R.id.info, U, 11f * s);
         v.setTextViewTextSize(R.id.status, U, 9f * s);
         v.setTextViewTextSize(R.id.offline, U, 10f * s);
         float tw = shape == 1 ? w * 0.42f : w, th = shape == 2 ? h * 0.38f : h;
-        float ts = Math.max(0.8f, Math.min(5f, Math.min(tw / 130f, th / 110f)));
+        float ts = Math.max(0.8f, Math.min(5f, Math.min(tw / 150f, th / 140f)));
         v.setTextViewTextSize(R.id.t_title, U, 11f * ts);
         v.setTextViewTextSize(R.id.t_place, U, 20f * ts);
         v.setTextViewTextSize(R.id.t_min, U, 15f * ts);
