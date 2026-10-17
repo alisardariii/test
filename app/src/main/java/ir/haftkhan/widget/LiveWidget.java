@@ -10,7 +10,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.TypedValue;
 import android.widget.RemoteViews;
 
 import org.json.JSONObject;
@@ -35,6 +37,11 @@ public class LiveWidget extends AppWidgetProvider {
 
     @Override
     public void onEnabled(Context ctx) { schedule(ctx); }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context ctx, AppWidgetManager mgr, int id, Bundle opts) {
+        render(ctx, null);
+    }
 
     @Override
     public void onDisabled(Context ctx) {
@@ -152,6 +159,32 @@ public class LiveWidget extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.refresh, refreshIntent(ctx));
 
         AppWidgetManager m = AppWidgetManager.getInstance(ctx);
-        m.updateAppWidget(new ComponentName(ctx, LiveWidget.class), v);
+        int[] ids = m.getAppWidgetIds(new ComponentName(ctx, LiveWidget.class));
+        for (int id : ids) {
+            scale(ctx, v, m.getAppWidgetOptions(id));
+            m.updateAppWidget(id, v);
+        }
+    }
+
+    // اندازه‌ی متن‌ها به نسبت اندازه‌ی واقعی ویجت (گوشی و تبلت)
+    static void scale(Context ctx, RemoteViews v, Bundle o) {
+        int w = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
+        int h = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+        if (w <= 0) w = 150;
+        if (h <= 0) h = 150;
+        float s = Math.min(w, h) / 150f;
+        if (s < 0.8f) s = 0.8f;
+        if (s > 3f) s = 3f;
+        float amount = Math.min(22f * s, w / 6.5f);
+        int U = TypedValue.COMPLEX_UNIT_DIP;
+        v.setTextViewTextSize(R.id.refresh, U, 15f * s);
+        v.setTextViewTextSize(R.id.title, U, 11f * s);
+        v.setTextViewTextSize(R.id.amount, U, amount);
+        v.setTextViewTextSize(R.id.unit, U, 10f * s);
+        v.setTextViewTextSize(R.id.pct, U, 11f * s);
+        v.setTextViewTextSize(R.id.info, U, 11f * s);
+        v.setTextViewTextSize(R.id.status, U, 9f * s);
+        int pad = (int) (10f * s * ctx.getResources().getDisplayMetrics().density);
+        v.setViewPadding(R.id.root, pad, pad, pad, pad);
     }
 }
