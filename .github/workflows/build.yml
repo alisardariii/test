@@ -20,13 +20,13 @@ jobs:
       - name: Build
         run: |
           set -o pipefail
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
       - name: Publish APK to android-apk branch
         if: always()
         run: |
           mkdir -p /tmp/out
           cp build.log /tmp/out/ || true
-          cp app/build/outputs/apk/debug/app-debug.apk /tmp/out/haftkhan-widget.apk || true
+          cp app/build/outputs/apk/release/app-release.apk /tmp/out/haftkhan-widget.apk || true
           cd /tmp/out
           git init -q
           git config user.name "build-bot"

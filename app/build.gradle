@@ -6,16 +6,27 @@ android {
         applicationId 'ir.haftkhan.widget'
         minSdk 23
         targetSdk 34
-        versionCode 13
-        versionName '2.3'
+        versionCode 14
+        versionName '2.4'
     }
     signingConfigs {
-        debug {
+        release {
             storeFile file('radres.keystore')
             storePassword 'radres-haftkhan'
             keyAlias 'radres'
             keyPassword 'radres-haftkhan'
         }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            debuggable false
+        }
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
