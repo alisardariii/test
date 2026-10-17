@@ -22,6 +22,13 @@
         </activity>
         <provider android:name=".UpdateProvider" android:authorities="ir.haftkhan.widget.update"
             android:exported="false" android:grantUriPermissions="true" />
+        <service android:name=".QsTile" android:exported="true" android:label="فروش امشب"
+            android:icon="@drawable/ic_notif" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data android:name="android.service.quicksettings.ACTIVE_TILE" android:value="false" />
+        </service>
         <receiver android:name=".LiveWidget" android:exported="true" android:label="گزارش زنده">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

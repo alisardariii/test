@@ -101,6 +101,7 @@ public class MainActivity extends Activity {
         styleSwitch(R.id.al_tables, "al_tables");
         styleSwitch(R.id.al_watch, "al_watch");
         styleSwitch(R.id.al_taraz, "al_taraz");
+        styleSwitch(R.id.al_sum, "al_sum");
         ((EditText) findViewById(R.id.al_min)).setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
         findViewById(R.id.al_save).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { saveAlerts(); }
@@ -130,6 +131,18 @@ public class MainActivity extends Activity {
                 p.edit().putString("tap", id == R.id.tapRefresh ? "refresh" : "open").apply();
                 Toast.makeText(MainActivity.this, "ذخیره شد", Toast.LENGTH_SHORT).show();
                 new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
+            }
+        });
+
+        // حالت مخفی
+        final Switch pv = (Switch) findViewById(R.id.privacy);
+        styleSwitch(R.id.privacy, "privacy");
+        pv.setChecked(p.getBoolean("privacy", false));
+        pv.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton b, boolean v) {
+                p.edit().putBoolean("privacy", v).putLong("reveal_until", 0).apply();
+                Toast.makeText(MainActivity.this, v ? "حالت مخفی روشن شد" : "حالت مخفی خاموش شد", Toast.LENGTH_SHORT).show();
+                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); LiveWidget.tile(getApplicationContext()); } }).start();
             }
         });
 
@@ -289,6 +302,7 @@ public class MainActivity extends Activity {
         p.edit().putBoolean("al_tables", ((Switch) findViewById(R.id.al_tables)).isChecked())
                 .putBoolean("al_watch", ((Switch) findViewById(R.id.al_watch)).isChecked())
                 .putBoolean("al_taraz", ((Switch) findViewById(R.id.al_taraz)).isChecked())
+                .putBoolean("al_sum", ((Switch) findViewById(R.id.al_sum)).isChecked())
                 .putInt("al_min", m).apply();
         ((EditText) findViewById(R.id.al_min)).setText(LiveWidget.fa(String.valueOf(m)));
         show((TextView) findViewById(R.id.al_res), "✓ تنظیمات هشدار ذخیره شد.", 1);

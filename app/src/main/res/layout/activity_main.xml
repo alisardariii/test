@@ -111,6 +111,8 @@
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" />
             <Switch android:id="@+id/al_taraz" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:paddingTop="10dp" android:paddingBottom="10dp" android:text="آخر شب، اگر تراز صندوق صفر نشده" android:textColor="#1D2B27" android:textSize="15sp" />
+            <Switch android:id="@+id/al_sum" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="خلاصه‌ی فروش امشب (۲۳:۳۰ یا وقتی آخرین فیش بسته شد)" android:textColor="#1D2B27" android:textSize="15sp" />
             <TextView android:id="@+id/perm_warn" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="8dp" android:padding="12dp" android:background="@drawable/chip_bad" android:textColor="#B03A2E"
                 android:textSize="13sp" android:visibility="gone" android:clickable="true" android:focusable="true" />
@@ -142,6 +144,9 @@
                     android:paddingTop="10dp" android:paddingBottom="10dp" android:buttonTint="#E3A12F"
                     android:text="فقط اطلاعات تازه شود (چیزی باز نشود)" android:textColor="#1D2B27" android:textSize="15sp" />
             </RadioGroup>
+            <Switch android:id="@+id/privacy" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:paddingTop="10dp" android:paddingBottom="10dp"
+                android:text="حالت مخفی: مبلغ‌ها روی ویجت دیده نشوند (با زدن روی ویجت ۳۰ ثانیه نشان داده می‌شوند)" android:textColor="#1D2B27" android:textSize="15sp" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="انتخاب شما همان لحظه ذخیره می‌شود."
                 android:textColor="#93A099" android:textSize="12sp" />
         </LinearLayout>

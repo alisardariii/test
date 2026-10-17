@@ -46,6 +46,7 @@ public class Alerts {
             String type = a.optString("type");
             if ("watch".equals(type) && !p.getBoolean("al_watch", true)) continue;
             if ("taraz".equals(type) && !p.getBoolean("al_taraz", true)) continue;
+            if ("summary".equals(type) && !p.getBoolean("al_sum", true)) continue;
             found.add(new String[]{a.optString("key"), a.optString("title"), a.optString("text"), type});
         }
         String seenKey = "seen_" + si;

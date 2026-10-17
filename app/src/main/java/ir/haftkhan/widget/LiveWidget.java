@@ -42,6 +42,30 @@ import java.util.Locale;
 public class LiveWidget extends AppWidgetProvider {
     static final String ACTION_REFRESH = "ir.haftkhan.widget.REFRESH";
     static final String PREFS = "cfg";
+    static final String ACTION_REVEAL = "ir.haftkhan.widget.REVEAL";
+    static final String ACTION_HIDE = "ir.haftkhan.widget.HIDE";
+    static final String DOTS = "••••••";
+
+    /** حالت مخفی روشن است و الان مبلغ‌ها نباید دیده شوند؟ */
+    static boolean hidden(Context ctx) {
+        SharedPreferences p = ctx.getSharedPreferences(PREFS, 0);
+        return p.getBoolean("privacy", false) && System.currentTimeMillis() > p.getLong("reveal_until", 0);
+    }
+
+    /** کاشی منوی کشویی را هم تازه کن (فقط اندروید ۷ به بالا) */
+    static void tile(Context ctx) {
+        if (Build.VERSION.SDK_INT < 24) return;
+        try { android.service.quicksettings.TileService.requestListeningState(ctx, new ComponentName(ctx.getPackageName(), "ir.haftkhan.widget.QsTile")); } catch (Throwable ignored) {}
+    }
+
+    /** ۳۰ ثانیه نشان دادن مبلغ‌ها، بعد دوباره مخفی */
+    static void reveal(Context ctx) {
+        ctx.getSharedPreferences(PREFS, 0).edit().putLong("reveal_until", System.currentTimeMillis() + 30000).apply();
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+        if (am != null) am.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 30000,
+                PendingIntent.getBroadcast(ctx, 2, new Intent(ctx, LiveWidget.class).setAction(ACTION_HIDE), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+    }
+
 
     @Override public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) { schedule(ctx); refreshAsync(ctx); }
     @Override public void onEnabled(Context ctx) { schedule(ctx); }
@@ -53,6 +77,8 @@ public class LiveWidget extends AppWidgetProvider {
     @Override public void onReceive(Context ctx, Intent intent) {
         super.onReceive(ctx, intent);
         if (ACTION_REFRESH.equals(intent.getAction())) refreshAsync(ctx);
+        else if (ACTION_REVEAL.equals(intent.getAction())) { reveal(ctx); render(ctx); tile(ctx); refreshAsync(ctx); }
+        else if (ACTION_HIDE.equals(intent.getAction())) { render(ctx); tile(ctx); }
     }
 
     static PendingIntent refreshIntent(Context ctx) {
@@ -117,6 +143,7 @@ public class LiveWidget extends AppWidgetProvider {
             }
         }
         render(ctx);
+        tile(ctx);
         schedule(ctx);
     }
 
@@ -156,7 +183,8 @@ public class LiveWidget extends AppWidgetProvider {
                 JSONObject x = new JSONObject(last);
                 if (site != null && (site.name == null || site.name.isEmpty())) name = x.optString("site_name", name);
                 v.setTextViewText(R.id.title, "‏" + name + "‏ · ‏" + x.optString("now_t", ""));
-                v.setTextViewText(R.id.amount, x.optString("today_t", "—"));
+                boolean hid = hidden(ctx);
+                v.setTextViewText(R.id.amount, hid ? DOTS : x.optString("today_t", "—"));
                 v.setTextViewText(R.id.pct, "‏" + x.optString("pct_t", ""));
                 if (!off) v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
                 String R2 = "‏";
@@ -171,7 +199,7 @@ public class LiveWidget extends AppWidgetProvider {
                 if (best != null) {
                     v.setTextViewText(R.id.t_place, "‏" + fa(best.optString("place", "")));
                     v.setTextViewText(R.id.t_min, "‏⏱ " + fa(String.valueOf(best.optInt("minutes"))) + " دقیقه");
-                    v.setTextViewText(R.id.t_amt, "‏" + sep(Math.round(best.optDouble("amount", 0) / 10)) + " تومان");
+                    v.setTextViewText(R.id.t_amt, "‏" + (hid ? DOTS : sep(Math.round(best.optDouble("amount", 0) / 10))) + " تومان");
                 } else {
                     v.setTextViewText(R.id.t_place, "میز بازی نیست");
                     v.setTextViewText(R.id.t_min, ""); v.setTextViewText(R.id.t_amt, "");
@@ -192,8 +220,12 @@ public class LiveWidget extends AppWidgetProvider {
         Intent openI = u.isEmpty() ? new Intent(ctx, MainActivity.class) : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
         openI.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         boolean tapRefresh = "refresh".equals(p.getString("tap", "open")) && !u.isEmpty();
-        v.setOnClickPendingIntent(R.id.root, tapRefresh ? refreshIntent(ctx) : PendingIntent.getActivity(ctx, 100 + widgetId, openI,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        PendingIntent tapI = tapRefresh ? refreshIntent(ctx) : PendingIntent.getActivity(ctx, 100 + widgetId, openI,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        // در حالت مخفی، اولین ضربه مبلغ‌ها را ۳۰ ثانیه نشان می‌دهد؛ ضربه‌ی بعدی (وقتی پیداست) کار همیشگی را می‌کند
+        if (hidden(ctx)) tapI = PendingIntent.getBroadcast(ctx, 3, new Intent(ctx, LiveWidget.class).setAction(ACTION_REVEAL),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        v.setOnClickPendingIntent(R.id.root, tapI);
         v.setOnClickPendingIntent(R.id.refresh, refreshIntent(ctx));
 
         // اندازه‌ها
