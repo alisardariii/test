@@ -18,6 +18,10 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Switch;
+import android.widget.CompoundButton;
+import android.Manifest;
+import java.util.List;
 
 import org.json.JSONObject;
 
@@ -45,15 +49,15 @@ public class MainActivity extends Activity {
         } catch (Exception e) { reg = Typeface.DEFAULT; bold = Typeface.DEFAULT_BOLD; }
 
         final SharedPreferences p = getSharedPreferences(LiveWidget.PREFS, 0);
+        final EditText name = (EditText) findViewById(R.id.name);
         final EditText url = (EditText) findViewById(R.id.url);
         final TextView res = (TextView) findViewById(R.id.result);
-        url.setText(p.getString("url", ""));
 
         String[] steps = {
-                "لینک را در کادر «اتصال به داشبورد» (پایین) بگذارید و «ذخیره و امتحان» را بزنید تا «وصل شد» بیاید.",
+                "در کادر «مجموعه‌ها» اسم و لینک هر مجموعه را بگذارید و «ذخیره و امتحان» را بزنید.",
                 "روی صفحه‌ی اصلی، جای خالی را نگه دارید ← ابزارک‌ها (Widgets).",
-                "زیر «رادرس»، ویجت «گزارش زنده» را پیدا کنید و روی صفحه بکشید.",
-                "ویجت هر ۱۵ دقیقه خودش به‌روز می‌شود؛ برای به‌روزرسانی فوری ⟳ را بزنید."};
+                "زیر «رادرس»، ویجت «گزارش زنده» را روی صفحه بکشید و مجموعه را انتخاب کنید.",
+                "ویجت را مربعی، عریض یا بلند کنید؛ در حالت عریض و بلند، قدیمی‌ترین میز و نمودار هم می‌آید."};
         LinearLayout box = (LinearLayout) findViewById(R.id.steps);
         for (int i = 0; i < steps.length; i++) box.addView(stepRow(i + 1, steps[i]));
 
@@ -70,34 +74,55 @@ public class MainActivity extends Activity {
 
         findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                p.edit().putString("url", url.getText().toString().trim()).apply();
+                final String n = name.getText().toString().trim(), u = url.getText().toString().trim();
+                if (u.isEmpty()) { show(res, "لینک را وارد کنید.", -1); return; }
                 show(res, "در حال امتحان…", 0);
-                final String u = LiveWidget.jsonUrl(MainActivity.this);
                 new Thread(new Runnable() {
                     public void run() {
-                        String msg; int st;
+                        String msg; int st; String nm = n;
                         try {
-                            JSONObject x = new JSONObject(LiveWidget.fetch(u));
-                            msg = "✓ وصل شد — فروش امروز " + x.optString("today_t", "") + " تومان";
-                            st = 1;
+                            JSONObject x = new JSONObject(LiveWidget.fetch(Sites.jsonUrl(u)));
+                            if (nm.isEmpty()) nm = x.optString("site_name", "مجموعه");
+                            List<Sites.Site> l = Sites.all(MainActivity.this);
+                            if (editing >= 0 && editing < l.size()) { l.get(editing).name = nm; l.get(editing).url = u; }
+                            else l.add(new Sites.Site(nm, u));
+                            Sites.save(MainActivity.this, l);
+                            msg = "✓ «" + nm + "» وصل شد — فروش امروز " + x.optString("today_t", "") + " تومان"; st = 1;
                         } catch (Exception ex) {
-                            msg = "✕ وصل نشد. لینک یا اینترنت را چک کنید.";
-                            st = -1;
+                            msg = "✕ وصل نشد. لینک یا اینترنت را چک کنید."; st = -1;
                         }
-                        final String m = msg; final int s = st;
-                        runOnUiThread(new Runnable() { public void run() { show(res, m, s); } });
-                        LiveWidget.refreshNow(getApplicationContext());
+                        final String m = msg; final int s2 = st;
+                        runOnUiThread(new Runnable() { public void run() {
+                            show(res, m, s2);
+                            if (s2 > 0) { editing = -1; name.setText(""); url.setText(""); fillSites(); }
+                        } });
+                        if (st > 0) LiveWidget.refreshNow(getApplicationContext());
                     }
                 }).start();
             }
         });
+        fillSites();
+
+        // هشدارها
+        bindSwitch(R.id.al_tables, "al_tables");
+        bindSwitch(R.id.al_watch, "al_watch");
+        bindSwitch(R.id.al_taraz, "al_taraz");
+        final EditText mins = (EditText) findViewById(R.id.al_min);
+        mins.setText(String.valueOf(p.getInt("al_min", 60)));
+        mins.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean f) {
+                if (!f) { try { p.edit().putInt("al_min", Math.max(5, Integer.parseInt(mins.getText().toString().trim()))).apply(); } catch (Exception ignored) {} }
+            }
+        });
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 7);
 
         RadioGroup rg = (RadioGroup) findViewById(R.id.tap);
         ((RadioButton) findViewById("refresh".equals(p.getString("tap", "open")) ? R.id.tapRefresh : R.id.tapOpen)).setChecked(true);
         rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             public void onCheckedChanged(RadioGroup g, int id) {
                 p.edit().putString("tap", id == R.id.tapRefresh ? "refresh" : "open").apply();
-                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext(), null); } }).start();
+                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
             }
         });
 
@@ -113,7 +138,8 @@ public class MainActivity extends Activity {
         try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "?"; }
     }
     String base() {
-        String u = getSharedPreferences(LiveWidget.PREFS, 0).getString("url", "").trim();
+        List<Sites.Site> l = Sites.all(this);
+        String u = l.isEmpty() ? "" : l.get(0).url.trim();
         try {
             URL x = new URL(u);
             return x.getProtocol() + "://" + x.getHost() + (x.getPort() > 0 ? ":" + x.getPort() : "");
@@ -137,7 +163,7 @@ public class MainActivity extends Activity {
         final TextView r = (TextView) findViewById(R.id.updres);
         final TextView btn = (TextView) findViewById(R.id.upd);
         final String b = base();
-        if (b.isEmpty()) { if (loud) show(r, "اول لینک داشبورد را در بالا ذخیره کنید.", -1); return; }
+        if (b.isEmpty()) { if (loud) show(r, "اول یک مجموعه در کادر «مجموعه‌ها» اضافه کنید.", -1); return; }
         if (loud) show(r, "در حال بررسی…", 0);
         new Thread(new Runnable() {
             public void run() {
@@ -209,6 +235,62 @@ public class MainActivity extends Activity {
                 }
             }
         }).start();
+    }
+
+    int editing = -1;
+
+    @Override protected void onPause() {
+        super.onPause();
+        try { getSharedPreferences(LiveWidget.PREFS, 0).edit().putInt("al_min",
+                Math.max(5, Integer.parseInt(((EditText) findViewById(R.id.al_min)).getText().toString().trim()))).apply(); } catch (Exception ignored) {}
+    }
+
+    void bindSwitch(int id, final String key) {
+        Switch sw = (Switch) findViewById(id);
+        final SharedPreferences p = getSharedPreferences(LiveWidget.PREFS, 0);
+        sw.setChecked(p.getBoolean(key, true));
+        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton b, boolean v) { p.edit().putBoolean(key, v).apply(); }
+        });
+    }
+
+    void fillSites() {
+        LinearLayout box = (LinearLayout) findViewById(R.id.sites_list);
+        box.removeAllViews();
+        final List<Sites.Site> l = Sites.all(this);
+        if (l.isEmpty()) {
+            TextView t = new TextView(this); t.setText("هنوز مجموعه‌ای اضافه نشده."); t.setTextColor(Color.parseColor("#93A099")); t.setTextSize(14);
+            t.setTypeface(reg); box.addView(t);
+        }
+        for (int i = 0; i < l.size(); i++) {
+            final int idx = i;
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setBackgroundResource(R.drawable.field); row.setPadding(dp(14), dp(10), dp(14), dp(10));
+            LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rl.topMargin = dp(8); row.setLayoutParams(rl);
+            LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
+            TextView nm = new TextView(this); nm.setText(l.get(i).name); nm.setTextColor(Color.parseColor("#0B3F36")); nm.setTextSize(15); nm.setTypeface(bold);
+            TextView ul = new TextView(this); ul.setText(l.get(i).url); ul.setTextColor(Color.parseColor("#93A099")); ul.setTextSize(11);
+            ul.setTextDirection(View.TEXT_DIRECTION_LTR); ul.setSingleLine(true); ul.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
+            col.addView(nm); col.addView(ul);
+            row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+            TextView del = new TextView(this); del.setText("حذف"); del.setTextColor(Color.parseColor("#B03A2E")); del.setTextSize(14);
+            del.setTypeface(bold); del.setPadding(dp(12), dp(6), dp(4), dp(6));
+            del.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
+                List<Sites.Site> x = Sites.all(MainActivity.this); if (idx < x.size()) x.remove(idx);
+                Sites.save(MainActivity.this, x); editing = -1; fillSites(); LiveWidget.render(getApplicationContext());
+            } });
+            row.addView(del);
+            row.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
+                editing = idx;
+                ((EditText) findViewById(R.id.name)).setText(l.get(idx).name);
+                ((EditText) findViewById(R.id.url)).setText(l.get(idx).url);
+                ((TextView) findViewById(R.id.form_title)).setText("ویرایش «" + l.get(idx).name + "»");
+            } });
+            box.addView(row);
+        }
+        ((TextView) findViewById(R.id.form_title)).setText("افزودن مجموعه");
     }
 
     View stepRow(int n, String text) {

@@ -6,7 +6,7 @@
     <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="fitXY" android:src="@drawable/bg_shade" />
     <LinearLayout android:id="@+id/content" android:layout_width="match_parent" android:layout_height="match_parent"
-        android:orientation="horizontal" android:layoutDirection="rtl" android:padding="8dp">
+        android:orientation="horizontal" android:layoutDirection="rtl" android:baselineAligned="false" android:padding="8dp">
         <LinearLayout android:id="@+id/blk_main" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.35"
             android:orientation="vertical" android:gravity="center_vertical" android:background="@drawable/block" android:padding="10dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -33,16 +33,22 @@
             <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:gravity="right" android:textColor="#C9D6D0" android:textSize="9sp" android:maxLines="1" />
         </LinearLayout>
-        <LinearLayout android:id="@+id/blk_tbl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-            android:layout_marginStart="8dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/block" android:padding="10dp">
+        <LinearLayout android:id="@+id/extra" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="8dp" android:orientation="vertical" android:baselineAligned="false">
+            <LinearLayout android:id="@+id/blk_tbl" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:orientation="vertical" android:gravity="center" android:background="@drawable/block" android:padding="8dp">
             <TextView android:id="@+id/t_title" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:text="قدیمی‌ترین میز باز" android:textColor="#FFE3A0" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" />
+                android:gravity="center" android:text="قدیمی‌ترین میز باز" android:textColor="#FFE3A0" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
             <TextView android:id="@+id/t_place" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:layout_marginTop="4dp" android:text="—" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:maxLines="1" />
+                android:gravity="center" android:layout_marginTop="2dp" android:text="—" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:maxLines="1" />
             <TextView android:id="@+id/t_min" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:text="" android:textColor="#FFFFFF" android:textSize="14sp" android:maxLines="1" />
+                android:gravity="center" android:textColor="#FFFFFF" android:textSize="13sp" android:maxLines="1" />
             <TextView android:id="@+id/t_amt" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:text="" android:textColor="#E6EEEA" android:textSize="11sp" android:maxLines="1" />
+                android:gravity="center" android:textColor="#E6EEEA" android:textSize="10sp" android:maxLines="1" />
+            </LinearLayout>
+            <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="8dp" android:background="@drawable/block" android:padding="6dp">
+                <ImageView android:id="@+id/chart" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" />
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

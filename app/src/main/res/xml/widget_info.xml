@@ -7,4 +7,6 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:configure="ir.haftkhan.widget.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable" />
