@@ -4,97 +4,137 @@
     android:background="#F7F3EA" android:fillViewport="true">
 <LinearLayout android:id="@+id/page" android:layout_width="match_parent" android:layout_height="wrap_content"
     android:orientation="vertical" android:layoutDirection="rtl">
-
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:background="@drawable/hdr" android:orientation="horizontal" android:gravity="center_vertical"
         android:paddingLeft="22dp" android:paddingRight="22dp" android:paddingTop="44dp" android:paddingBottom="26dp">
-        <ImageView android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_launcher"
-            android:padding="0dp" android:scaleType="fitCenter" />
+        <ImageView android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_launcher" android:scaleType="fitCenter" />
         <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
             android:orientation="vertical" android:layout_marginStart="14dp">
             <TextView android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="گزارش زنده" android:textColor="#FFFFFF" android:textSize="22sp" />
+                android:text="رادرس" android:textColor="#FFFFFF" android:textSize="22sp" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="رادرس · سیستم مدیریت رستوران" android:textColor="#F2C46B" android:textSize="13sp" />
+                android:text="گزارش زنده و هشدارهای رستوران" android:textColor="#F2C46B" android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-        android:padding="16dp">
-
-        <!-- راهنما -->
-        <LinearLayout android:id="@+id/steps" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:background="@drawable/card" android:padding="18dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="اضافه کردن ویجت" android:textColor="#0B3F36" android:textSize="17sp" android:layout_marginBottom="6dp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/card" android:padding="18dp">
+            <LinearLayout android:id="@+id/guide_head" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical" android:clickable="true" android:focusable="true">
+                <TextView android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:text="راهنمای شروع" android:textColor="#0B3F36" android:textSize="17sp" />
+                <TextView android:id="@+id/guide_arrow" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="▾" android:textColor="#0F5C4D" android:textSize="18sp" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/steps" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginTop="6dp" />
         </LinearLayout>
-
-        <!-- مجموعه‌ها -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
+            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="وضعیت" android:textColor="#0B3F36" android:textSize="17sp" />
+            <LinearLayout android:id="@+id/status_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginTop="6dp" />
+            <TextView android:id="@+id/refresh_now" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="match_parent" android:layout_height="46dp" android:background="@drawable/btn_small"
+                android:text="⟳  به‌روزرسانی همین الان" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="10dp" />
+        </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
             <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="مجموعه‌ها" android:textColor="#0B3F36" android:textSize="17sp" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                android:text="برای هر مجموعه (رستوران، هتل، …) لینک «داده‌ی خام» صفحه‌ی /widget داشبوردش را اضافه کنید. روی هر مجموعه بزنید تا ویرایش شود."
-                android:textColor="#5B6A64" android:textSize="13sp" />
+                android:text="هر مجموعه = یک رستوران یا هتل با لینک «داده‌ی خام» صفحه‌ی ‎/widget‎ داشبوردش." android:textColor="#5B6A64" android:textSize="13sp" />
             <LinearLayout android:id="@+id/sites_list" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:layout_marginTop="8dp" />
-            <TextView android:id="@+id/form_title" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" android:text="افزودن مجموعه" android:textColor="#0F5C4D" android:textSize="15sp" />
-            <EditText android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" android:background="@drawable/field" android:padding="14dp"
-                android:hint="اسم مجموعه (مثلاً هفت‌خوان)" android:textColor="#1D2B27" android:textColorHint="#93A099" android:textSize="14sp" android:inputType="text" />
-            <EditText android:id="@+id/url" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" android:background="@drawable/field" android:padding="14dp"
-                android:hint="http://…/w/….json" android:textColor="#1D2B27" android:textColorHint="#93A099"
-                android:textSize="14sp" android:textDirection="ltr" android:inputType="textUri" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:baselineAligned="false" android:layout_marginTop="12dp">
-                <TextView android:id="@+id/save" android:gravity="center" android:clickable="true" android:focusable="true" android:tag="b"
-                    android:layout_width="0dp" android:layout_weight="1.4" android:layout_height="50dp" android:background="@drawable/btn_primary"
-                    android:text="ذخیره و امتحان" android:textColor="#2A1C00" android:textSize="15sp" />
-                <TextView android:id="@+id/paste" android:gravity="center" android:clickable="true" android:focusable="true"
-                    android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp" android:layout_marginStart="10dp"
-                    android:background="@drawable/btn_ghost" android:text="چسباندن لینک" android:textColor="#0F5C4D" android:textSize="14sp" />
+            <TextView android:id="@+id/add_site" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="match_parent" android:layout_height="48dp" android:background="@drawable/btn_ghost"
+                android:text="+  افزودن مجموعه" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="12dp" />
+            <LinearLayout android:id="@+id/form" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"
+                android:background="@drawable/field" android:padding="14dp">
+                <TextView android:id="@+id/form_title" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="مجموعه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                    android:text="اسم" android:textColor="#5B6A64" android:textSize="13sp" />
+                <EditText android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp" android:background="@drawable/card" android:padding="12dp"
+                    android:hint="مثلاً هفت‌خوان" android:textColor="#1D2B27" android:textColorHint="#93A099" android:textSize="14sp" android:inputType="text" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                    android:gravity="center_vertical" android:layout_marginTop="10dp" android:baselineAligned="false">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="لینک داده‌ی خام" android:textColor="#5B6A64" android:textSize="13sp" />
+                    <TextView android:id="@+id/paste" android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:clickable="true" android:focusable="true" android:padding="4dp"
+                        android:text="📋 چسباندن" android:textColor="#0F5C4D" android:textSize="13sp" />
+                </LinearLayout>
+                <EditText android:id="@+id/url" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp" android:background="@drawable/card" android:padding="12dp"
+                    android:hint="http://…/w/….json" android:textColor="#1D2B27" android:textColorHint="#93A099"
+                    android:textSize="13sp" android:textDirection="ltr" android:inputType="textUri" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:baselineAligned="false" android:layout_marginTop="12dp">
+                    <TextView android:id="@+id/save" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_primary"
+                android:text="ذخیره" android:textColor="#2A1C00" android:textSize="15sp" android:layout_weight="1.5" />
+                    <TextView android:id="@+id/cancel" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_ghost"
+                android:text="انصراف" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_weight="1" android:layout_marginStart="10dp" />
+                </LinearLayout>
+                <TextView android:id="@+id/result" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
             </LinearLayout>
-            <TextView android:id="@+id/result" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
         </LinearLayout>
-
-        <!-- هشدارها -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
             <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="هشدارها" android:textColor="#0B3F36" android:textSize="17sp" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                android:text="هر ۱۵ دقیقه بررسی می‌شود و برای هر مورد فقط یک بار پیغام می‌آید."
-                android:textColor="#5B6A64" android:textSize="13sp" />
+                android:text="برای موارد زیر روی گوشی پیغام می‌آید (هر ۱۵ دقیقه بررسی؛ هر مورد یک بار)." android:textColor="#5B6A64" android:textSize="13sp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" android:layout_marginTop="10dp" />
             <Switch android:id="@+id/al_tables" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:thumbTint="#E3A12F"
-                android:text="میزی بیشتر از حد مجاز نشسته" android:textColor="#1D2B27" android:textSize="15sp" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
-                android:gravity="center_vertical" android:baselineAligned="false">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="حد مجاز (دقیقه):"
+                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="میز بیشتر از حد مجاز نشسته" android:textColor="#1D2B27" android:textSize="15sp" />
+            <LinearLayout android:id="@+id/min_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:baselineAligned="false" android:paddingBottom="6dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="حد مجاز:"
                     android:textColor="#5B6A64" android:textSize="14sp" />
-                <EditText android:id="@+id/al_min" android:layout_width="90dp" android:layout_height="wrap_content" android:layout_marginStart="10dp"
-                    android:background="@drawable/field" android:padding="10dp" android:gravity="center" android:inputType="number"
-                    android:textColor="#1D2B27" android:textSize="14sp" />
+                <EditText android:id="@+id/al_min" android:layout_width="80dp" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+                    android:background="@drawable/field" android:padding="8dp" android:gravity="center" android:inputType="number"
+                    android:textColor="#1D2B27" android:textSize="15sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
+                    android:text="دقیقه" android:textColor="#5B6A64" android:textSize="14sp" />
             </LinearLayout>
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" />
             <Switch android:id="@+id/al_watch" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:thumbTint="#E3A12F"
-                android:text="نگهبان صندوق: حذف فیش، تخفیف بعد از چاپ، پرداخت تکراری" android:textColor="#1D2B27" android:textSize="15sp" />
+                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="نگهبان صندوق (حذف فیش، تخفیف بعد از چاپ، پرداخت تکراری)" android:textColor="#1D2B27" android:textSize="15sp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" />
             <Switch android:id="@+id/al_taraz" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:paddingTop="8dp" android:paddingBottom="8dp" android:thumbTint="#E3A12F"
-                android:text="آخر شب تراز صندوق صفر نشده" android:textColor="#1D2B27" android:textSize="15sp" />
+                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="آخر شب، اگر تراز صندوق صفر نشده" android:textColor="#1D2B27" android:textSize="15sp" />
+            <TextView android:id="@+id/perm_warn" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:padding="12dp" android:background="@drawable/chip_bad" android:textColor="#B03A2E"
+                android:textSize="13sp" android:visibility="gone" android:clickable="true" android:focusable="true" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:baselineAligned="false" android:layout_marginTop="12dp">
+                <TextView android:id="@+id/al_save" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_primary"
+                android:text="ذخیره‌ی تنظیمات" android:textColor="#2A1C00" android:textSize="15sp" android:layout_weight="1.4" />
+                <TextView android:id="@+id/al_test" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_ghost"
+                android:text="هشدار آزمایشی" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_weight="1" android:layout_marginStart="10dp" />
+            </LinearLayout>
+            <TextView android:id="@+id/al_res" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
+            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp"
+                android:text="آخرین هشدارها" android:textColor="#0F5C4D" android:textSize="14sp" />
+            <LinearLayout android:id="@+id/log_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginTop="4dp" />
         </LinearLayout>
-
-        <!-- رفتار ویجت -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
             <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="با زدن روی ویجت" android:textColor="#0B3F36" android:textSize="17sp" />
-            <RadioGroup android:id="@+id/tap" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
+            <RadioGroup android:id="@+id/tap" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp">
                 <RadioButton android:id="@+id/tapOpen" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:paddingTop="10dp" android:paddingBottom="10dp" android:buttonTint="#E3A12F"
                     android:text="گزارش زنده باز شود" android:textColor="#1D2B27" android:textSize="15sp" />
@@ -102,18 +142,18 @@
                     android:paddingTop="10dp" android:paddingBottom="10dp" android:buttonTint="#E3A12F"
                     android:text="فقط اطلاعات تازه شود (چیزی باز نشود)" android:textColor="#1D2B27" android:textSize="15sp" />
             </RadioGroup>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="انتخاب شما همان لحظه ذخیره می‌شود."
+                android:textColor="#93A099" android:textSize="12sp" />
         </LinearLayout>
-
-        <!-- به‌روزرسانی -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
             <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="به‌روزرسانی برنامه" android:textColor="#0B3F36" android:textSize="17sp" />
             <TextView android:id="@+id/ver" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="4dp" android:textColor="#5B6A64" android:textSize="13sp" />
-            <TextView android:id="@+id/upd" android:tag="b" android:layout_width="match_parent" android:layout_height="50dp"
-                android:layout_marginTop="12dp" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:background="@drawable/btn_ghost" android:text="بررسی نسخه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" />
+            <TextView android:id="@+id/upd" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/btn_ghost"
+                android:text="بررسی نسخه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="12dp" />
             <TextView android:id="@+id/updres" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
         </LinearLayout>

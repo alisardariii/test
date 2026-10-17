@@ -63,9 +63,9 @@ public class LiveWidget extends AppWidgetProvider {
     static void schedule(Context ctx) {
         AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
-        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,
-                SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_FIFTEEN_MINUTES,
-                AlarmManager.INTERVAL_FIFTEEN_MINUTES, refreshIntent(ctx));
+        // هر ۱۵ دقیقه، حتی وقتی گوشی در حالت خواب است (بعد از هر به‌روزرسانی دوباره تنظیم می‌شود)
+        am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_FIFTEEN_MINUTES, refreshIntent(ctx));
     }
 
     static String fetch(String url) throws Exception {
@@ -117,6 +117,7 @@ public class LiveWidget extends AppWidgetProvider {
             }
         }
         render(ctx);
+        schedule(ctx);
     }
 
     static void render(Context ctx) {

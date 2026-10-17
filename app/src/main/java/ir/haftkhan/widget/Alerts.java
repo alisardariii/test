@@ -27,7 +27,7 @@ public class Alerts {
         SharedPreferences p = ctx.getSharedPreferences(LiveWidget.PREFS, 0);
         String today = new SimpleDateFormat("yyyyMMdd", Locale.US).format(new Date());
         int limit = p.getInt("al_min", 60);
-        List<String[]> found = new ArrayList<>();   // key, title, text
+        List<String[]> found = new ArrayList<>();   // key, title, text, type
         if (p.getBoolean("al_tables", true)) {
             JSONArray open = x.optJSONArray("open");
             if (open != null) for (int k = 0; k < open.length(); k++) {
@@ -35,8 +35,8 @@ public class Alerts {
                 if (t == null || !t.optBoolean("indoor")) continue;
                 int m = t.optInt("minutes");
                 if (m >= limit && m <= 360)
-                    found.add(new String[]{"tbl:" + today + ":" + t.optString("num"), "میز بیش از " + LiveWidget.fa(String.valueOf(limit)) + " دقیقه",
-                            LiveWidget.fa(t.optString("place", "")) + " · " + LiveWidget.fa(String.valueOf(m)) + " دقیقه · فیش " + LiveWidget.fa(t.optString("num", ""))});
+                    found.add(new String[]{"tbl:" + today + ":" + t.optString("num") + ":" + limit, "میز بیش از " + LiveWidget.fa(String.valueOf(limit)) + " دقیقه",
+                            LiveWidget.fa(t.optString("place", "")) + " · " + LiveWidget.fa(String.valueOf(m)) + " دقیقه · فیش " + LiveWidget.fa(t.optString("num", "")), "tbl"});
             }
         }
         JSONArray al = x.optJSONArray("alerts");
@@ -46,23 +46,36 @@ public class Alerts {
             String type = a.optString("type");
             if ("watch".equals(type) && !p.getBoolean("al_watch", true)) continue;
             if ("taraz".equals(type) && !p.getBoolean("al_taraz", true)) continue;
-            found.add(new String[]{a.optString("key"), a.optString("title"), a.optString("text")});
+            found.add(new String[]{a.optString("key"), a.optString("title"), a.optString("text"), type});
         }
         String seenKey = "seen_" + si;
         String raw = p.getString(seenKey, null);
         JSONArray seen;
         try { seen = raw == null ? new JSONArray() : new JSONArray(raw); } catch (Exception e) { seen = new JSONArray(); }
-        boolean first = raw == null;   // بار اول: موارد قدیمی امروز را بی‌صدا ثبت کن
+        boolean first = raw == null;   // بار اول: موارد قبلی نگهبان صندوق را بی‌صدا ثبت کن (میز و تراز اعلام می‌شوند)
         List<String> keys = new ArrayList<>();
         for (int i = 0; i < seen.length(); i++) keys.add(seen.optString(i));
         String name = site.name == null || site.name.isEmpty() ? x.optString("site_name", "رادرس") : site.name;
         for (String[] f : found) {
             if (keys.contains(f[0])) continue;
             keys.add(f[0]);
-            if (!first) notify(ctx, f[0], name + " — " + f[1], f[2], site.url);
+            if (first && "watch".equals(f[3])) continue;
+            notify(ctx, f[0], name + " — " + f[1], f[2], site.url);
+            log(ctx, name + " — " + f[1], f[2]);
         }
         while (keys.size() > 300) keys.remove(0);
         p.edit().putString(seenKey, new JSONArray(keys).toString()).apply();
+    }
+
+    static void log(Context ctx, String title, String text) {
+        SharedPreferences p = ctx.getSharedPreferences(LiveWidget.PREFS, 0);
+        try {
+            JSONArray a = new JSONArray(p.getString("log", "[]"));
+            a.put(new JSONObject().put("t", new SimpleDateFormat("MM/dd HH:mm", Locale.US).format(new Date())).put("title", title).put("text", text));
+            JSONArray b = new JSONArray();
+            for (int i = Math.max(0, a.length() - 30); i < a.length(); i++) b.put(a.get(i));
+            p.edit().putString("log", b.toString()).apply();
+        } catch (Exception ignored) {}
     }
 
     static void notify(Context ctx, String key, String title, String text, String url) {

@@ -1,133 +1,337 @@
 package ir.haftkhan.widget;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Switch;
-import android.widget.CompoundButton;
-import android.Manifest;
-import java.util.List;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-import android.net.Uri;
-import android.os.Build;
-import android.provider.Settings;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 
 public class MainActivity extends Activity {
     Typeface reg, bold;
+    SharedPreferences p;
+    int editing = -1;
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        Window win = getWindow();
-        win.setStatusBarColor(Color.parseColor("#0B3F36"));
+        getWindow().setStatusBarColor(Color.parseColor("#0B3F36"));
         setContentView(R.layout.activity_main);
         try {
             reg = Typeface.createFromAsset(getAssets(), "fonts/samim.ttf");
             bold = Typeface.createFromAsset(getAssets(), "fonts/samim-bold.ttf");
         } catch (Exception e) { reg = Typeface.DEFAULT; bold = Typeface.DEFAULT_BOLD; }
+        p = getSharedPreferences(LiveWidget.PREFS, 0);
 
-        final SharedPreferences p = getSharedPreferences(LiveWidget.PREFS, 0);
-        final EditText name = (EditText) findViewById(R.id.name);
-        final EditText url = (EditText) findViewById(R.id.url);
-        final TextView res = (TextView) findViewById(R.id.result);
-
+        // راهنما (اگر مجموعه‌ای هست، جمع شده)
         String[] steps = {
-                "در کادر «مجموعه‌ها» اسم و لینک هر مجموعه را بگذارید و «ذخیره و امتحان» را بزنید.",
-                "روی صفحه‌ی اصلی، جای خالی را نگه دارید ← ابزارک‌ها (Widgets).",
-                "زیر «رادرس»، ویجت «گزارش زنده» را روی صفحه بکشید و مجموعه را انتخاب کنید.",
-                "ویجت را مربعی، عریض یا بلند کنید؛ در حالت عریض و بلند، قدیمی‌ترین میز و نمودار هم می‌آید."};
-        LinearLayout box = (LinearLayout) findViewById(R.id.steps);
+                "در «مجموعه‌ها» دکمه‌ی «+ افزودن مجموعه» را بزنید، اسم و لینک «داده‌ی خام» صفحه‌ی ‎/widget‎ داشبورد را بگذارید و «ذخیره» را بزنید.",
+                "روی صفحه‌ی اصلی گوشی، جای خالی را نگه دارید ← ابزارک‌ها (Widgets).",
+                "زیر «رادرس»، ویجت «گزارش زنده» را روی صفحه بکشید (اگر چند مجموعه دارید، مجموعه را انتخاب کنید).",
+                "ویجت را مربعی، عریض یا بلند کنید؛ در حالت عریض و بلند، قدیمی‌ترین میز و نمودار هم می‌آید.",
+                "در «هشدارها» موارد دلخواه را روشن کنید و «ذخیره‌ی تنظیمات» را بزنید."};
+        final LinearLayout box = (LinearLayout) findViewById(R.id.steps);
         for (int i = 0; i < steps.length; i++) box.addView(stepRow(i + 1, steps[i]));
+        setGuide(Sites.all(this).isEmpty());
+        findViewById(R.id.guide_head).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { setGuide(box.getVisibility() != View.VISIBLE); }
+        });
 
+        // وضعیت
+        findViewById(R.id.refresh_now).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { refreshAll(true); }
+        });
+
+        // مجموعه‌ها
+        findViewById(R.id.add_site).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { openForm(-1); }
+        });
+        findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { closeForm(); }
+        });
         findViewById(R.id.paste).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData c = cm == null ? null : cm.getPrimaryClip();
                 if (c != null && c.getItemCount() > 0) {
                     CharSequence t = c.getItemAt(0).coerceToText(MainActivity.this);
-                    if (t != null) url.setText(t.toString().trim());
+                    if (t != null) ((EditText) findViewById(R.id.url)).setText(t.toString().trim());
                 }
             }
         });
-
         findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                final String n = name.getText().toString().trim(), u = url.getText().toString().trim();
-                if (u.isEmpty()) { show(res, "لینک را وارد کنید.", -1); return; }
-                show(res, "در حال امتحان…", 0);
-                new Thread(new Runnable() {
-                    public void run() {
-                        String msg; int st; String nm = n;
-                        try {
-                            JSONObject x = new JSONObject(LiveWidget.fetch(Sites.jsonUrl(u)));
-                            if (nm.isEmpty()) nm = x.optString("site_name", "مجموعه");
-                            List<Sites.Site> l = Sites.all(MainActivity.this);
-                            if (editing >= 0 && editing < l.size()) { l.get(editing).name = nm; l.get(editing).url = u; }
-                            else l.add(new Sites.Site(nm, u));
-                            Sites.save(MainActivity.this, l);
-                            msg = "✓ «" + nm + "» وصل شد — فروش امروز " + x.optString("today_t", "") + " تومان"; st = 1;
-                        } catch (Exception ex) {
-                            msg = "✕ وصل نشد. لینک یا اینترنت را چک کنید."; st = -1;
-                        }
-                        final String m = msg; final int s2 = st;
-                        runOnUiThread(new Runnable() { public void run() {
-                            show(res, m, s2);
-                            if (s2 > 0) { editing = -1; name.setText(""); url.setText(""); fillSites(); }
-                        } });
-                        if (st > 0) LiveWidget.refreshNow(getApplicationContext());
-                    }
-                }).start();
-            }
+            public void onClick(View v) { saveSite(); }
         });
         fillSites();
 
         // هشدارها
-        bindSwitch(R.id.al_tables, "al_tables");
-        bindSwitch(R.id.al_watch, "al_watch");
-        bindSwitch(R.id.al_taraz, "al_taraz");
-        final EditText mins = (EditText) findViewById(R.id.al_min);
-        mins.setText(String.valueOf(p.getInt("al_min", 60)));
-        mins.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            public void onFocusChange(View v, boolean f) {
-                if (!f) { try { p.edit().putInt("al_min", Math.max(5, Integer.parseInt(mins.getText().toString().trim()))).apply(); } catch (Exception ignored) {} }
+        styleSwitch(R.id.al_tables, "al_tables");
+        styleSwitch(R.id.al_watch, "al_watch");
+        styleSwitch(R.id.al_taraz, "al_taraz");
+        ((EditText) findViewById(R.id.al_min)).setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
+        findViewById(R.id.al_save).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { saveAlerts(); }
+        });
+        findViewById(R.id.al_test).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!notifOk()) { askNotif(); return; }
+                Alerts.notify(MainActivity.this, "test:" + System.currentTimeMillis(), "رادرس — هشدار آزمایشی",
+                        "اگر این پیغام را می‌بینید، هشدارها درست کار می‌کنند.", "");
+                show((TextView) findViewById(R.id.al_res), "✓ پیغام آزمایشی فرستاده شد؛ بالای صفحه را نگاه کنید.", 1);
+            }
+        });
+        findViewById(R.id.perm_warn).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!notifOk()) askNotif();
+                else try { startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)); } catch (Exception ignored) {}
             }
         });
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 7);
 
+        // با زدن روی ویجت
         RadioGroup rg = (RadioGroup) findViewById(R.id.tap);
         ((RadioButton) findViewById("refresh".equals(p.getString("tap", "open")) ? R.id.tapRefresh : R.id.tapOpen)).setChecked(true);
         rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             public void onCheckedChanged(RadioGroup g, int id) {
                 p.edit().putString("tap", id == R.id.tapRefresh ? "refresh" : "open").apply();
+                Toast.makeText(MainActivity.this, "ذخیره شد", Toast.LENGTH_SHORT).show();
                 new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
             }
         });
 
         setupUpdate();
         applyFont(findViewById(R.id.page));
+        refreshAll(false);
+    }
+
+    @Override protected void onResume() { super.onResume(); permState(); fillStatus(); fillLog(); }
+
+    // ───── راهنما ─────
+    void setGuide(boolean open) {
+        findViewById(R.id.steps).setVisibility(open ? View.VISIBLE : View.GONE);
+        ((TextView) findViewById(R.id.guide_arrow)).setText(open ? "▴" : "▾");
+    }
+
+    // ───── وضعیت ─────
+    void refreshAll(final boolean loud) {
+        if (loud) Toast.makeText(this, "در حال به‌روزرسانی…", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            public void run() {
+                LiveWidget.refreshNow(getApplicationContext());
+                runOnUiThread(new Runnable() { public void run() { fillStatus(); fillLog(); } });
+            }
+        }).start();
+    }
+
+    void fillStatus() {
+        LinearLayout box = (LinearLayout) findViewById(R.id.status_list);
+        box.removeAllViews();
+        List<Sites.Site> l = Sites.all(this);
+        if (l.isEmpty()) { box.addView(line("هنوز مجموعه‌ای اضافه نشده.", "#93A099", false)); return; }
+        for (int i = 0; i < l.size(); i++) {
+            boolean off = p.getBoolean("offline_" + i, false);
+            String at = p.getString("last_at_" + i, "");
+            String today = "";
+            try { today = new JSONObject(p.getString("last_" + i, "{}")).optString("today_t", ""); } catch (Exception ignored) {}
+            String t = (off ? "✕ " : "✓ ") + l.get(i).name + " — " + (off ? "قطع" : "وصل")
+                    + (at.isEmpty() ? "" : " · " + LiveWidget.fa(at)) + (today.isEmpty() || off ? "" : " · فروش امروز " + today + " تومان");
+            box.addView(line(t, off ? "#B03A2E" : "#0F5C4D", true));
+        }
+    }
+
+    TextView line(String s, String color, boolean b) {
+        TextView t = new TextView(this);
+        t.setText(s); t.setTextColor(Color.parseColor(color)); t.setTextSize(14); t.setTypeface(b ? bold : reg);
+        t.setPadding(0, dp(4), 0, dp(4));
+        return t;
+    }
+
+    // ───── مجموعه‌ها ─────
+    void openForm(int idx) {
+        editing = idx;
+        List<Sites.Site> l = Sites.all(this);
+        boolean ed = idx >= 0 && idx < l.size();
+        ((TextView) findViewById(R.id.form_title)).setText(ed ? "ویرایش «" + l.get(idx).name + "»" : "مجموعه‌ی جدید");
+        ((EditText) findViewById(R.id.name)).setText(ed ? l.get(idx).name : "");
+        ((EditText) findViewById(R.id.url)).setText(ed ? l.get(idx).url : "");
+        findViewById(R.id.result).setVisibility(View.GONE);
+        findViewById(R.id.form).setVisibility(View.VISIBLE);
+        findViewById(R.id.add_site).setVisibility(View.GONE);
+    }
+
+    void closeForm() {
+        editing = -1;
+        findViewById(R.id.form).setVisibility(View.GONE);
+        findViewById(R.id.add_site).setVisibility(View.VISIBLE);
+    }
+
+    void saveSite() {
+        final TextView res = (TextView) findViewById(R.id.result);
+        final String n = ((EditText) findViewById(R.id.name)).getText().toString().trim();
+        final String u = ((EditText) findViewById(R.id.url)).getText().toString().trim();
+        if (u.isEmpty()) { show(res, "لینک را وارد کنید.", -1); return; }
+        show(res, "در حال امتحان لینک…", 0);
+        new Thread(new Runnable() {
+            public void run() {
+                String msg; int st; String nm = n;
+                try {
+                    JSONObject x = new JSONObject(LiveWidget.fetch(Sites.jsonUrl(u)));
+                    if (nm.isEmpty()) nm = x.optString("site_name", "مجموعه");
+                    List<Sites.Site> l = Sites.all(MainActivity.this);
+                    if (editing >= 0 && editing < l.size()) { l.get(editing).name = nm; l.get(editing).url = u; }
+                    else l.add(new Sites.Site(nm, u));
+                    Sites.save(MainActivity.this, l);
+                    msg = "✓ «" + nm + "» ذخیره شد و وصل است."; st = 1;
+                } catch (Exception ex) { msg = "✕ وصل نشد؛ ذخیره نشد. لینک یا اینترنت را چک کنید."; st = -1; }
+                final String m = msg; final int s2 = st;
+                runOnUiThread(new Runnable() { public void run() {
+                    if (s2 > 0) { closeForm(); fillSites(); Toast.makeText(MainActivity.this, m, Toast.LENGTH_LONG).show(); refreshAll(false); }
+                    else show(res, m, s2);
+                } });
+            }
+        }).start();
+    }
+
+    void fillSites() {
+        LinearLayout box = (LinearLayout) findViewById(R.id.sites_list);
+        box.removeAllViews();
+        final List<Sites.Site> l = Sites.all(this);
+        for (int i = 0; i < l.size(); i++) {
+            final int idx = i;
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setBackgroundResource(R.drawable.field); row.setPadding(dp(14), dp(10), dp(10), dp(10));
+            LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rl.topMargin = dp(8); row.setLayoutParams(rl);
+            LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
+            TextView nm = new TextView(this); nm.setText(l.get(i).name); nm.setTextColor(Color.parseColor("#0B3F36")); nm.setTextSize(15); nm.setTypeface(bold);
+            TextView ul = new TextView(this); ul.setText(l.get(i).url); ul.setTextColor(Color.parseColor("#93A099")); ul.setTextSize(11);
+            ul.setTextDirection(View.TEXT_DIRECTION_LTR); ul.setSingleLine(true); ul.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
+            col.addView(nm); col.addView(ul);
+            row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+            row.addView(chip("ویرایش", "#0F5C4D", new View.OnClickListener() { public void onClick(View v) { openForm(idx); } }));
+            row.addView(chip("حذف", "#B03A2E", new View.OnClickListener() { public void onClick(View v) {
+                new AlertDialog.Builder(MainActivity.this).setMessage("«" + l.get(idx).name + "» حذف شود؟")
+                        .setPositiveButton("حذف", new DialogInterface.OnClickListener() { public void onClick(DialogInterface d, int w) {
+                            List<Sites.Site> x = Sites.all(MainActivity.this); if (idx < x.size()) x.remove(idx);
+                            Sites.save(MainActivity.this, x); closeForm(); fillSites(); fillStatus(); LiveWidget.render(getApplicationContext());
+                        } }).setNegativeButton("انصراف", null).show();
+            } }));
+            box.addView(row);
+        }
+        findViewById(R.id.add_site).setVisibility(findViewById(R.id.form).getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+    }
+
+    TextView chip(String text, String color, View.OnClickListener l) {
+        TextView t = new TextView(this);
+        t.setText(text); t.setTextColor(Color.parseColor(color)); t.setTextSize(13); t.setTypeface(bold);
+        t.setBackgroundResource(R.drawable.btn_small); t.setPadding(dp(12), dp(6), dp(12), dp(6));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMarginStart(dp(6)); t.setLayoutParams(lp); t.setOnClickListener(l);
+        return t;
+    }
+
+    // ───── هشدارها ─────
+    void styleSwitch(int id, String key) {
+        Switch sw = (Switch) findViewById(id);
+        int[][] st = {{android.R.attr.state_checked}, {}};
+        sw.setThumbTintList(new ColorStateList(st, new int[]{Color.parseColor("#E3A12F"), Color.parseColor("#FFFFFF")}));
+        sw.setTrackTintList(new ColorStateList(st, new int[]{Color.parseColor("#F2C46B"), Color.parseColor("#B9C2BE")}));
+        sw.setChecked(p.getBoolean(key, true));
+        if (id == R.id.al_tables) sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton b, boolean v) { findViewById(R.id.min_row).setAlpha(v ? 1f : 0.4f); }
+        });
+        if (id == R.id.al_tables) findViewById(R.id.min_row).setAlpha(sw.isChecked() ? 1f : 0.4f);
+    }
+
+    void saveAlerts() {
+        int m = 60;
+        try {
+            String s = ((EditText) findViewById(R.id.al_min)).getText().toString().trim();
+            StringBuilder en = new StringBuilder();
+            for (char c : s.toCharArray()) en.append(c >= '۰' && c <= '۹' ? (char) ('0' + (c - '۰')) : c);
+            m = Math.max(5, Integer.parseInt(en.toString()));
+        } catch (Exception ignored) {}
+        p.edit().putBoolean("al_tables", ((Switch) findViewById(R.id.al_tables)).isChecked())
+                .putBoolean("al_watch", ((Switch) findViewById(R.id.al_watch)).isChecked())
+                .putBoolean("al_taraz", ((Switch) findViewById(R.id.al_taraz)).isChecked())
+                .putInt("al_min", m).apply();
+        ((EditText) findViewById(R.id.al_min)).setText(LiveWidget.fa(String.valueOf(m)));
+        show((TextView) findViewById(R.id.al_res), "✓ تنظیمات هشدار ذخیره شد.", 1);
+        if (!notifOk()) askNotif();
+        refreshAll(false);
+    }
+
+    boolean notifOk() {
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        return nm != null && nm.areNotificationsEnabled();
+    }
+
+    void askNotif() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 7);
+        else try {
+            startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName()));
+        } catch (Exception ignored) {}
+    }
+
+    void permState() {
+        TextView w = (TextView) findViewById(R.id.perm_warn);
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        boolean battery = pm == null || pm.isIgnoringBatteryOptimizations(getPackageName());
+        if (!notifOk()) { w.setText("⚠ اجازه‌ی نوتیفیکیشن خاموش است؛ برای روشن کردن اینجا را بزنید."); w.setVisibility(View.VISIBLE); }
+        else if (!battery) { w.setText("⚠ برای اینکه هشدارها سر وقت بیایند، «رادرس» را از بهینه‌سازی باتری خارج کنید (اینجا را بزنید ← All apps ← رادرس ← Don't optimize / Unrestricted)."); w.setVisibility(View.VISIBLE); }
+        else w.setVisibility(View.GONE);
+        if (reg != null) w.setTypeface(bold);
+    }
+
+    void fillLog() {
+        LinearLayout box = (LinearLayout) findViewById(R.id.log_list);
+        box.removeAllViews();
+        JSONArray a;
+        try { a = new JSONArray(p.getString("log", "[]")); } catch (Exception e) { a = new JSONArray(); }
+        if (a.length() == 0) { box.addView(line("هنوز هشداری نیامده.", "#93A099", false)); return; }
+        for (int i = a.length() - 1; i >= 0 && i >= a.length() - 8; i--) {
+            JSONObject o = a.optJSONObject(i);
+            if (o == null) continue;
+            TextView t = line(LiveWidget.fa(o.optString("t")) + " · " + o.optString("title"), "#1D2B27", true);
+            TextView d = line(o.optString("text"), "#5B6A64", false); d.setTextSize(13); d.setPadding(0, 0, 0, dp(6));
+            box.addView(t); box.addView(d);
+        }
     }
 
     // ───── به‌روزرسانی از خود داشبورد (‎/static/app/version.json و radres.apk) ─────
@@ -237,61 +441,7 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    int editing = -1;
 
-    @Override protected void onPause() {
-        super.onPause();
-        try { getSharedPreferences(LiveWidget.PREFS, 0).edit().putInt("al_min",
-                Math.max(5, Integer.parseInt(((EditText) findViewById(R.id.al_min)).getText().toString().trim()))).apply(); } catch (Exception ignored) {}
-    }
-
-    void bindSwitch(int id, final String key) {
-        Switch sw = (Switch) findViewById(id);
-        final SharedPreferences p = getSharedPreferences(LiveWidget.PREFS, 0);
-        sw.setChecked(p.getBoolean(key, true));
-        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton b, boolean v) { p.edit().putBoolean(key, v).apply(); }
-        });
-    }
-
-    void fillSites() {
-        LinearLayout box = (LinearLayout) findViewById(R.id.sites_list);
-        box.removeAllViews();
-        final List<Sites.Site> l = Sites.all(this);
-        if (l.isEmpty()) {
-            TextView t = new TextView(this); t.setText("هنوز مجموعه‌ای اضافه نشده."); t.setTextColor(Color.parseColor("#93A099")); t.setTextSize(14);
-            t.setTypeface(reg); box.addView(t);
-        }
-        for (int i = 0; i < l.size(); i++) {
-            final int idx = i;
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setBackgroundResource(R.drawable.field); row.setPadding(dp(14), dp(10), dp(14), dp(10));
-            LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            rl.topMargin = dp(8); row.setLayoutParams(rl);
-            LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
-            TextView nm = new TextView(this); nm.setText(l.get(i).name); nm.setTextColor(Color.parseColor("#0B3F36")); nm.setTextSize(15); nm.setTypeface(bold);
-            TextView ul = new TextView(this); ul.setText(l.get(i).url); ul.setTextColor(Color.parseColor("#93A099")); ul.setTextSize(11);
-            ul.setTextDirection(View.TEXT_DIRECTION_LTR); ul.setSingleLine(true); ul.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
-            col.addView(nm); col.addView(ul);
-            row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            TextView del = new TextView(this); del.setText("حذف"); del.setTextColor(Color.parseColor("#B03A2E")); del.setTextSize(14);
-            del.setTypeface(bold); del.setPadding(dp(12), dp(6), dp(4), dp(6));
-            del.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
-                List<Sites.Site> x = Sites.all(MainActivity.this); if (idx < x.size()) x.remove(idx);
-                Sites.save(MainActivity.this, x); editing = -1; fillSites(); LiveWidget.render(getApplicationContext());
-            } });
-            row.addView(del);
-            row.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
-                editing = idx;
-                ((EditText) findViewById(R.id.name)).setText(l.get(idx).name);
-                ((EditText) findViewById(R.id.url)).setText(l.get(idx).url);
-                ((TextView) findViewById(R.id.form_title)).setText("ویرایش «" + l.get(idx).name + "»");
-            } });
-            box.addView(row);
-        }
-        ((TextView) findViewById(R.id.form_title)).setText("افزودن مجموعه");
-    }
 
     View stepRow(int n, String text) {
         LinearLayout row = new LinearLayout(this);
@@ -318,24 +468,16 @@ public class MainActivity extends Activity {
 
     void show(TextView res, String m, int st) {
         res.setVisibility(View.VISIBLE);
-        if (reg != null) applyFontOne(res);
         res.setText(m);
-        res.setTypeface(bold);
+        if (bold != null) res.setTypeface(bold);
         if (st > 0) { res.setBackgroundResource(R.drawable.chip_ok); res.setTextColor(Color.parseColor("#0F5C4D")); }
         else if (st < 0) { res.setBackgroundResource(R.drawable.chip_bad); res.setTextColor(Color.parseColor("#B03A2E")); }
         else { res.setBackgroundResource(R.drawable.field); res.setTextColor(Color.parseColor("#5B6A64")); }
     }
 
-    void applyFontOne(TextView t) { t.setTypeface(bold); }
-
     void applyFont(View v) {
-        if (v instanceof TextView && !(v instanceof EditText)) {
-            ((TextView) v).setTypeface("b".equals(v.getTag()) ? bold : reg);
-        }
-        if (v instanceof ViewGroup) {
-            ViewGroup g = (ViewGroup) v;
-            for (int i = 0; i < g.getChildCount(); i++) applyFont(g.getChildAt(i));
-        }
+        if (v instanceof TextView && !(v instanceof EditText)) ((TextView) v).setTypeface("b".equals(v.getTag()) ? bold : reg);
+        if (v instanceof ViewGroup) { ViewGroup g = (ViewGroup) v; for (int i = 0; i < g.getChildCount(); i++) applyFont(g.getChildAt(i)); }
     }
 
     int dp(int x) { return (int) (x * getResources().getDisplayMetrics().density + 0.5f); }
