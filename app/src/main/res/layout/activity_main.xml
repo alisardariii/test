@@ -9,7 +9,7 @@
         android:background="@drawable/hdr" android:orientation="horizontal" android:gravity="center_vertical"
         android:paddingLeft="22dp" android:paddingRight="22dp" android:paddingTop="44dp" android:paddingBottom="26dp">
         <ImageView android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_launcher"
-            android:background="@drawable/logo_bg" android:padding="4dp" android:scaleType="fitCenter" />
+            android:padding="0dp" android:scaleType="fitCenter" />
         <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
             android:orientation="vertical" android:layout_marginStart="14dp">
             <TextView android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"

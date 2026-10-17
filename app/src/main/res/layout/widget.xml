@@ -92,7 +92,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="right"
-        android:text="برای تنظیم، اپ «گزارش زنده هفت‌خوان» را باز کنید"
+        android:text="برای تنظیم، اپ «رادرس» را باز کنید"
         android:textColor="#E6EEEA"
         android:textSize="11sp"
         android:maxLines="2" />

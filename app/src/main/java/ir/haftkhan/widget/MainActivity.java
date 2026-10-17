@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
         String[] steps = {
                 "لینک را بالا بگذارید و «ذخیره و امتحان» را بزنید تا «وصل شد» بیاید.",
                 "روی صفحه‌ی اصلی، جای خالی را نگه دارید ← ابزارک‌ها (Widgets).",
-                "«گزارش زنده هفت‌خوان» را پیدا کنید و روی صفحه بکشید.",
+                "زیر «رادرس»، ویجت «گزارش زنده» را پیدا کنید و روی صفحه بکشید.",
                 "ویجت هر ۱۵ دقیقه خودش به‌روز می‌شود؛ برای به‌روزرسانی فوری ⟳ را بزنید."};
         LinearLayout box = (LinearLayout) findViewById(R.id.steps);
         for (int i = 0; i < steps.length; i++) box.addView(stepRow(i + 1, steps[i]));

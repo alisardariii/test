@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="گزارش زنده هفت‌خوان"
+        android:label="رادرس"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
@@ -13,7 +13,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <receiver android:name=".LiveWidget" android:exported="true">
+        <receiver android:name=".LiveWidget" android:exported="true" android:label="گزارش زنده">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
