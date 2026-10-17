@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
         android:label="رادرس"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
@@ -13,6 +14,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider android:name=".UpdateProvider" android:authorities="ir.haftkhan.widget.update"
+            android:exported="false" android:grantUriPermissions="true" />
         <receiver android:name=".LiveWidget" android:exported="true" android:label="گزارش زنده">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

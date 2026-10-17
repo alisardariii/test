@@ -70,6 +70,20 @@
                 android:text="اضافه کردن ویجت" android:textColor="#0B3F36" android:textSize="17sp" android:layout_marginBottom="6dp" />
         </LinearLayout>
 
+        <!-- به‌روزرسانی -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
+            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="به‌روزرسانی برنامه" android:textColor="#0B3F36" android:textSize="17sp" />
+            <TextView android:id="@+id/ver" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:textColor="#5B6A64" android:textSize="13sp" />
+            <TextView android:id="@+id/upd" android:tag="b" android:layout_width="match_parent" android:layout_height="50dp"
+                android:layout_marginTop="12dp" android:gravity="center" android:clickable="true" android:focusable="true"
+                android:background="@drawable/btn_ghost" android:text="بررسی نسخه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" />
+            <TextView android:id="@+id/updres" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
+        </LinearLayout>
+
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
             android:layout_marginTop="18dp" android:layout_marginBottom="8dp" android:text="رادرس — سیستم مدیریت رستوران"
             android:textColor="#93A099" android:textSize="12sp" />

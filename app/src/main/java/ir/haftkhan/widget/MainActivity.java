@@ -21,6 +21,15 @@ import android.widget.TextView;
 
 import org.json.JSONObject;
 
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 public class MainActivity extends Activity {
     Typeface reg, bold;
 
@@ -92,7 +101,114 @@ public class MainActivity extends Activity {
             }
         });
 
+        setupUpdate();
         applyFont(findViewById(R.id.page));
+    }
+
+    // ───── به‌روزرسانی از خود داشبورد (‎/static/app/version.json و radres.apk) ─────
+    int myCode() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode; } catch (Exception e) { return 0; }
+    }
+    String myName() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "?"; }
+    }
+    String base() {
+        String u = getSharedPreferences(LiveWidget.PREFS, 0).getString("url", "").trim();
+        try {
+            URL x = new URL(u);
+            return x.getProtocol() + "://" + x.getHost() + (x.getPort() > 0 ? ":" + x.getPort() : "");
+        } catch (Exception e) { return ""; }
+    }
+
+    String newApk = null; int newCode = 0;
+
+    void setupUpdate() {
+        ((TextView) findViewById(R.id.ver)).setText("نسخه‌ی فعلی: " + LiveWidget.fa(myName()));
+        final TextView btn = (TextView) findViewById(R.id.upd);
+        btn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (newApk != null) download(); else check(true);
+            }
+        });
+        check(false);
+    }
+
+    void check(final boolean loud) {
+        final TextView r = (TextView) findViewById(R.id.updres);
+        final TextView btn = (TextView) findViewById(R.id.upd);
+        final String b = base();
+        if (b.isEmpty()) { if (loud) show(r, "اول لینک داشبورد را در بالا ذخیره کنید.", -1); return; }
+        if (loud) show(r, "در حال بررسی…", 0);
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    JSONObject j = new JSONObject(LiveWidget.fetch(b + "/static/app/version.json"));
+                    final int code = j.optInt("versionCode", 0);
+                    final String name = j.optString("versionName", "");
+                    final String notes = j.optString("notes", "");
+                    final String apk = b + "/static/app/" + j.optString("file", "radres.apk");
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            if (code > myCode()) {
+                                newApk = apk; newCode = code;
+                                btn.setBackgroundResource(R.drawable.btn_primary);
+                                btn.setTextColor(Color.parseColor("#2A1C00"));
+                                btn.setText("دانلود و نصب نسخه‌ی " + LiveWidget.fa(name));
+                                show(r, "نسخه‌ی جدید آماده است" + (notes.isEmpty() ? "" : ":\n" + notes), 1);
+                            } else if (loud) {
+                                show(r, "✓ برنامه به‌روز است.", 1);
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    if (loud) runOnUiThread(new Runnable() { public void run() { show(r, "✕ بررسی انجام نشد. اینترنت یا لینک را چک کنید.", -1); } });
+                }
+            }
+        }).start();
+    }
+
+    void download() {
+        final TextView r = (TextView) findViewById(R.id.updres);
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            show(r, "یک بار اجازه‌ی «نصب برنامه‌های ناشناس» را برای رادرس روشن کنید و برگردید، بعد دوباره دکمه را بزنید.", 0);
+            startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+            return;
+        }
+        show(r, "در حال دانلود…", 0);
+        final String apk = newApk;
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    File f = new File(getCacheDir(), UpdateProvider.NAME);
+                    HttpURLConnection c = (HttpURLConnection) new URL(apk).openConnection();
+                    c.setConnectTimeout(15000); c.setReadTimeout(30000);
+                    int total = c.getContentLength();
+                    InputStream in = c.getInputStream();
+                    FileOutputStream out = new FileOutputStream(f);
+                    byte[] buf = new byte[16384]; int n; long got = 0; long lastUi = 0;
+                    while ((n = in.read(buf)) > 0) {
+                        out.write(buf, 0, n); got += n;
+                        if (total > 0 && System.currentTimeMillis() - lastUi > 300) {
+                            lastUi = System.currentTimeMillis();
+                            final int pct = (int) (got * 100 / total);
+                            runOnUiThread(new Runnable() { public void run() { show(r, "در حال دانلود… " + LiveWidget.fa(String.valueOf(pct)) + "٪", 0); } });
+                        }
+                    }
+                    out.close(); in.close(); c.disconnect();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            show(r, "دانلود شد. «نصب» یا «به‌روزرسانی» را بزنید.", 1);
+                            Intent i = new Intent(Intent.ACTION_VIEW);
+                            i.setDataAndType(UpdateProvider.uri(), "application/vnd.android.package-archive");
+                            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        }
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(new Runnable() { public void run() { show(r, "✕ دانلود انجام نشد. دوباره امتحان کنید.", -1); } });
+                }
+            }
+        }).start();
     }
 
     View stepRow(int n, String text) {
@@ -120,12 +236,15 @@ public class MainActivity extends Activity {
 
     void show(TextView res, String m, int st) {
         res.setVisibility(View.VISIBLE);
+        if (reg != null) applyFontOne(res);
         res.setText(m);
         res.setTypeface(bold);
         if (st > 0) { res.setBackgroundResource(R.drawable.chip_ok); res.setTextColor(Color.parseColor("#0F5C4D")); }
         else if (st < 0) { res.setBackgroundResource(R.drawable.chip_bad); res.setTextColor(Color.parseColor("#B03A2E")); }
         else { res.setBackgroundResource(R.drawable.field); res.setTextColor(Color.parseColor("#5B6A64")); }
     }
+
+    void applyFontOne(TextView t) { t.setTypeface(bold); }
 
     void applyFont(View v) {
         if (v instanceof TextView && !(v instanceof EditText)) {
