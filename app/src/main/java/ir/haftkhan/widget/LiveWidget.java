@@ -15,6 +15,7 @@ import android.os.SystemClock;
 import android.util.TypedValue;
 import android.widget.RemoteViews;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -138,51 +139,19 @@ public class LiveWidget extends AppWidgetProvider {
     }
 
     static void render(Context ctx, String err) {
-        SharedPreferences p = ctx.getSharedPreferences(PREFS, 0);
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget);
-        String last = p.getString("last", null);
-        v.setInt(R.id.bgfill, "setColorFilter", tableColor(0));
-        if (last != null) {
-            try {
-                JSONObject x = new JSONObject(last);
-                v.setTextViewText(R.id.title, "\u200Fهفت‌خوان\u200F · \u200F" + x.optString("now_t", ""));
-                v.setTextViewText(R.id.amount, x.optString("today_t", "—"));
-                v.setTextViewText(R.id.pct, "\u200F" + x.optString("pct_t", ""));
-                v.setTextColor(R.id.pct, Color.WHITE);
-                if (!p.getBoolean("offline", false))
-                    v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
-                String R2 = "\u200F";
-                v.setTextViewText(R.id.info, R2 + "فیش\u00A0" + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز\u00A0باز\u00A0" + x.optString("open_t", "") + R2);
-            } catch (Exception ignored) {}
-        } else if (err != null) {
-            v.setTextViewText(R.id.info, err);
-        }
-        boolean off = p.getBoolean("offline", false);
-        if (off) v.setInt(R.id.bgfill, "setColorFilter", 0x40FFFFFF); // حالت شیشه‌ای وقتی ارتباط قطع است
-        v.setViewVisibility(R.id.offline, off ? android.view.View.VISIBLE : android.view.View.GONE);
-        String at = p.getString("last_at", "");
-        String st = off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at));
-        v.setTextViewText(R.id.status, st);
-
-        String u = jsonUrl(ctx);
-        Intent open = u.isEmpty() ? new Intent(ctx, MainActivity.class)
-                : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
-        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        boolean tapRefresh = "refresh".equals(p.getString("tap", "open")) && !u.isEmpty();
-        v.setOnClickPendingIntent(R.id.root, tapRefresh ? refreshIntent(ctx) : PendingIntent.getActivity(ctx, 2, open,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        v.setOnClickPendingIntent(R.id.refresh, refreshIntent(ctx));
-
         AppWidgetManager m = AppWidgetManager.getInstance(ctx);
         int[] ids = m.getAppWidgetIds(new ComponentName(ctx, LiveWidget.class));
         for (int id : ids) {
-            scale(ctx, v, m.getAppWidgetOptions(id));
-            m.updateAppWidget(id, v);
+            try { m.updateAppWidget(id, build(ctx, err, m.getAppWidgetOptions(id))); } catch (Exception ignored) {}
         }
     }
 
-    // اندازه‌ی متن‌ها به نسبت اندازه‌ی واقعی ویجت (گوشی و تبلت)
-    static void scale(Context ctx, RemoteViews v, Bundle o) {
+    static String sep(long n) {
+        return fa(String.format(Locale.US, "%,d", n)).replace(',', '٬');
+    }
+
+    // شکل ویجت: ۰ = مربعی (فقط بلوک اصلی)، ۱ = مستطیل افقی، ۲ = مستطیل عمودی
+    static RemoteViews build(Context ctx, String err, Bundle o) {
         int w = 0, h = 0;
         if (o != null) {
             w = Math.max(o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0), o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0));
@@ -190,21 +159,84 @@ public class LiveWidget extends AppWidgetProvider {
         }
         if (w <= 0) w = 150;
         if (h <= 0) h = 150;
-        // محتوا حدود ۸ خط ارتفاع دارد؛ اندازه را از هر دو بعد می‌گیریم تا کادر پر شود
-        float s = Math.min(w / 150f, h / 140f);
+        int shape = w >= h * 1.45f ? 1 : (h >= w * 1.35f ? 2 : 0);
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), shape == 1 ? R.layout.widget_wide : R.layout.widget);
+        v.setViewVisibility(R.id.blk_tbl, shape == 0 ? android.view.View.GONE : android.view.View.VISIBLE);
+
+        SharedPreferences p = ctx.getSharedPreferences(PREFS, 0);
+        String last = p.getString("last", null);
+        boolean off = p.getBoolean("offline", false);
+        v.setInt(R.id.bgfill, "setColorFilter", tableColor(0));
+        if (last != null) {
+            try {
+                JSONObject x = new JSONObject(last);
+                v.setTextViewText(R.id.title, "\u200Fهفت‌خوان\u200F · \u200F" + x.optString("now_t", ""));
+                v.setTextViewText(R.id.amount, x.optString("today_t", "—"));
+                v.setTextViewText(R.id.pct, "\u200F" + x.optString("pct_t", ""));
+                if (!off) v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
+                String R2 = "\u200F";
+                v.setTextViewText(R.id.info, R2 + "فیش\u00A0" + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز\u00A0باز\u00A0" + x.optString("open_t", "") + R2);
+                // قدیمی‌ترین میز باز سالن (کمتر از ۶ ساعت)
+                JSONArray open = x.optJSONArray("open");
+                JSONObject best = null;
+                if (open != null) for (int k = 0; k < open.length(); k++) {
+                    JSONObject t = open.optJSONObject(k);
+                    if (t == null || !t.optBoolean("indoor") || t.optInt("minutes") > 360) continue;
+                    if (best == null || t.optInt("minutes") > best.optInt("minutes")) best = t;
+                }
+                if (best != null) {
+                    v.setTextViewText(R.id.t_place, "\u200F" + fa(best.optString("place", "")));
+                    v.setTextViewText(R.id.t_min, "\u200F⏱ " + fa(String.valueOf(best.optInt("minutes"))) + " دقیقه");
+                    v.setTextViewText(R.id.t_amt, "\u200F" + sep(Math.round(best.optDouble("amount", 0) / 10)) + " تومان");
+                } else {
+                    v.setTextViewText(R.id.t_place, "میز بازی نیست");
+                    v.setTextViewText(R.id.t_min, "");
+                    v.setTextViewText(R.id.t_amt, "");
+                }
+            } catch (Exception ignored) {}
+        } else if (err != null) {
+            v.setTextViewText(R.id.info, err);
+        }
+        if (off) v.setInt(R.id.bgfill, "setColorFilter", 0x40FFFFFF); // حالت شیشه‌ای وقتی ارتباط قطع است
+        v.setViewVisibility(R.id.offline, off ? android.view.View.VISIBLE : android.view.View.GONE);
+        String at = p.getString("last_at", "");
+        v.setTextViewText(R.id.status, off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at)));
+
+        String u = jsonUrl(ctx);
+        Intent openI = u.isEmpty() ? new Intent(ctx, MainActivity.class)
+                : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
+        openI.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        boolean tapRefresh = "refresh".equals(p.getString("tap", "open")) && !u.isEmpty();
+        v.setOnClickPendingIntent(R.id.root, tapRefresh ? refreshIntent(ctx) : PendingIntent.getActivity(ctx, 2, openI,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        v.setOnClickPendingIntent(R.id.refresh, refreshIntent(ctx));
+
+        // اندازه‌ی متن‌ها بر اساس اندازه‌ی بلوک اصلی
+        float mw = shape == 1 ? w * 0.55f : w, mh = shape == 2 ? h * 0.6f : h;
+        float s = Math.min(mw / 150f, mh / 140f);
         if (s < 0.8f) s = 0.8f;
         if (s > 5f) s = 5f;
-        float amount = Math.min(24f * s, w / 6.2f);
         int U = TypedValue.COMPLEX_UNIT_DIP;
         v.setTextViewTextSize(R.id.refresh, U, 15f * s);
         v.setTextViewTextSize(R.id.title, U, 11f * s);
-        v.setTextViewTextSize(R.id.amount, U, amount);
+        v.setTextViewTextSize(R.id.amount, U, Math.min(24f * s, mw / 6.6f));
         v.setTextViewTextSize(R.id.unit, U, 10f * s);
         v.setTextViewTextSize(R.id.pct, U, 11f * s);
         v.setTextViewTextSize(R.id.info, U, 11f * s);
         v.setTextViewTextSize(R.id.status, U, 9f * s);
         v.setTextViewTextSize(R.id.offline, U, 10f * s);
-        int pad = (int) (10f * s * ctx.getResources().getDisplayMetrics().density);
+        float tw = shape == 1 ? w * 0.42f : w, th = shape == 2 ? h * 0.38f : h;
+        float ts = Math.max(0.8f, Math.min(5f, Math.min(tw / 130f, th / 110f)));
+        v.setTextViewTextSize(R.id.t_title, U, 11f * ts);
+        v.setTextViewTextSize(R.id.t_place, U, 20f * ts);
+        v.setTextViewTextSize(R.id.t_min, U, 15f * ts);
+        v.setTextViewTextSize(R.id.t_amt, U, 11f * ts);
+        float d = ctx.getResources().getDisplayMetrics().density;
+        int pad = (int) (7f * Math.min(s, 3f) * d);
         v.setViewPadding(R.id.content, pad, pad, pad, pad);
+        int bp = (int) (9f * Math.min(s, 3f) * d);
+        v.setViewPadding(R.id.blk_main, bp, bp, bp, bp);
+        v.setViewPadding(R.id.blk_tbl, bp, bp, bp, bp);
+        return v;
     }
 }

@@ -1,109 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <ImageView
-        android:id="@+id/bgfill"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/bg_fill" />
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/bg_shade" />
-<LinearLayout
-    android:id="@+id/content"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center_vertical"
-    android:padding="10dp">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layoutDirection="ltr"
-        android:gravity="center_vertical">
-        <TextView
-            android:id="@+id/refresh"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⟳"
-            android:textColor="#E6EEEA"
-            android:textSize="15sp"
-            android:paddingLeft="0dp"
-            android:paddingRight="6dp" />
-        <TextView
-            android:id="@+id/offline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚠ قطع"
-            android:textColor="#FFD2CC"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:paddingRight="6dp"
-            android:visibility="gone" />
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="right"
-            android:text="هفت‌خوان"
-            android:textColor="#FFE3A0"
-            android:textSize="11sp"
-            android:maxLines="1"
-            android:textStyle="bold" />
+    android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent">
+    <ImageView android:id="@+id/bgfill" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitXY" android:src="@drawable/bg_fill" />
+    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitXY" android:src="@drawable/bg_shade" />
+    <LinearLayout android:id="@+id/content" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:layoutDirection="rtl" android:padding="8dp">
+        <LinearLayout android:id="@+id/blk_main" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1.6"
+            android:orientation="vertical" android:gravity="center_vertical" android:background="@drawable/block" android:padding="10dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layoutDirection="ltr" android:gravity="center_vertical">
+                <TextView android:id="@+id/refresh" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="⟳" android:textColor="#E6EEEA" android:textSize="15sp" android:paddingRight="6dp" />
+                <TextView android:id="@+id/offline" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="⚠ قطع" android:textColor="#FFD2CC" android:textSize="10sp" android:textStyle="bold"
+                    android:paddingRight="6dp" android:visibility="gone" />
+                <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:gravity="right" android:text="هفت‌خوان" android:textColor="#FFE3A0" android:textSize="11sp"
+                    android:textStyle="bold" android:maxLines="1" />
+            </LinearLayout>
+            <TextView android:id="@+id/amount" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="right" android:layout_marginTop="2dp" android:text="—" android:textColor="#FFFFFF"
+                android:textSize="22sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/unit" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="right" android:text="تومان" android:textColor="#E6EEEA" android:textSize="10sp" />
+            <TextView android:id="@+id/pct" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="right" android:layout_marginTop="3dp" android:textColor="#FFFFFF" android:textSize="11sp" android:maxLines="2" />
+            <TextView android:id="@+id/info" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="right" android:text="برای تنظیم، اپ «رادرس» را باز کنید" android:textColor="#E6EEEA"
+                android:textSize="11sp" android:maxLines="2" />
+            <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="right" android:textColor="#C9D6D0" android:textSize="9sp" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/blk_tbl" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:layout_marginTop="8dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/block" android:padding="10dp">
+            <TextView android:id="@+id/t_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:text="قدیمی‌ترین میز باز" android:textColor="#FFE3A0" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/t_place" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:layout_marginTop="4dp" android:text="—" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/t_min" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:text="" android:textColor="#FFFFFF" android:textSize="14sp" android:maxLines="1" />
+            <TextView android:id="@+id/t_amt" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:text="" android:textColor="#E6EEEA" android:textSize="11sp" android:maxLines="1" />
+        </LinearLayout>
     </LinearLayout>
-    <TextView
-        android:id="@+id/amount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right"
-        android:layout_marginTop="4dp"
-        android:text="—"
-        android:textColor="#FFFFFF"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:maxLines="1" />
-    <TextView
-        android:id="@+id/unit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right"
-        android:text="تومان"
-        android:textColor="#E6EEEA"
-        android:textSize="10sp" />
-    <TextView
-        android:id="@+id/pct"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right"
-        android:layout_marginTop="3dp"
-        android:text=""
-        android:textColor="#E6EEEA"
-        android:textSize="11sp"
-        android:maxLines="2" />
-    <TextView
-        android:id="@+id/info"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right"
-        android:text="برای تنظیم، اپ «رادرس» را باز کنید"
-        android:textColor="#E6EEEA"
-        android:textSize="11sp"
-        android:maxLines="2" />
-    <TextView
-        android:id="@+id/status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right"
-        android:text=""
-        android:textColor="#C9D6D0"
-        android:textSize="9sp"
-        android:maxLines="1" />
-</LinearLayout>
 </FrameLayout>
