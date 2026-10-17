@@ -129,11 +129,12 @@ public class LiveWidget extends AppWidgetProvider {
         if (last != null) {
             try {
                 JSONObject x = new JSONObject(last);
-                v.setTextViewText(R.id.title, "هفت‌خوان · " + x.optString("now_t", ""));
+                v.setTextViewText(R.id.title, "\u200Fهفت‌خوان\u200F · \u200F" + x.optString("now_t", ""));
                 v.setTextViewText(R.id.amount, x.optString("today_t", "—"));
-                v.setTextViewText(R.id.pct, x.optString("pct_t", ""));
+                v.setTextViewText(R.id.pct, "\u200F" + x.optString("pct_t", ""));
                 try { v.setTextColor(R.id.pct, Color.parseColor(x.optString("pct_color", "#A9B8B1"))); } catch (Exception ignored) {}
-                v.setTextViewText(R.id.info, "فیش " + x.optString("orders_t", "") + " · میز باز " + x.optString("open_t", ""));
+                String R2 = "\u200F";
+                v.setTextViewText(R.id.info, R2 + "فیش\u00A0" + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز\u00A0باز\u00A0" + x.optString("open_t", "") + R2);
             } catch (Exception ignored) {}
         } else if (err != null) {
             v.setTextViewText(R.id.info, err);
