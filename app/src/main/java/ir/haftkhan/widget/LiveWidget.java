@@ -127,10 +127,11 @@ public class LiveWidget extends AppWidgetProvider {
             try {
                 String body = fetch(url);
                 new JSONObject(body); // اطمینان از درست بودن داده
-                p.edit().putString("last", body)
+                p.edit().putString("last", body).putBoolean("offline", false)
                         .putString("last_at", new SimpleDateFormat("HH:mm", Locale.US).format(new Date())).apply();
             } catch (Exception e) {
                 err = "به سیستم وصل نشد";
+                p.edit().putBoolean("offline", true).apply();
             }
         }
         render(ctx, err);
@@ -148,22 +149,27 @@ public class LiveWidget extends AppWidgetProvider {
                 v.setTextViewText(R.id.amount, x.optString("today_t", "—"));
                 v.setTextViewText(R.id.pct, "\u200F" + x.optString("pct_t", ""));
                 v.setTextColor(R.id.pct, Color.WHITE);
-                v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
+                if (!p.getBoolean("offline", false))
+                    v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
                 String R2 = "\u200F";
                 v.setTextViewText(R.id.info, R2 + "فیش\u00A0" + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز\u00A0باز\u00A0" + x.optString("open_t", "") + R2);
             } catch (Exception ignored) {}
         } else if (err != null) {
             v.setTextViewText(R.id.info, err);
         }
+        boolean off = p.getBoolean("offline", false);
+        if (off) v.setInt(R.id.bgfill, "setColorFilter", 0x40FFFFFF); // حالت شیشه‌ای وقتی ارتباط قطع است
+        v.setViewVisibility(R.id.offline, off ? android.view.View.VISIBLE : android.view.View.GONE);
         String at = p.getString("last_at", "");
-        String st = err != null && last != null ? err + " — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at));
+        String st = off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at));
         v.setTextViewText(R.id.status, st);
 
         String u = jsonUrl(ctx);
         Intent open = u.isEmpty() ? new Intent(ctx, MainActivity.class)
                 : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
         open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        v.setOnClickPendingIntent(R.id.root, PendingIntent.getActivity(ctx, 2, open,
+        boolean tapRefresh = "refresh".equals(p.getString("tap", "open")) && !u.isEmpty();
+        v.setOnClickPendingIntent(R.id.root, tapRefresh ? refreshIntent(ctx) : PendingIntent.getActivity(ctx, 2, open,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         v.setOnClickPendingIntent(R.id.refresh, refreshIntent(ctx));
 
@@ -193,6 +199,7 @@ public class LiveWidget extends AppWidgetProvider {
         v.setTextViewTextSize(R.id.pct, U, 11f * s);
         v.setTextViewTextSize(R.id.info, U, 11f * s);
         v.setTextViewTextSize(R.id.status, U, 9f * s);
+        v.setTextViewTextSize(R.id.offline, U, 10f * s);
         int pad = (int) (10f * s * ctx.getResources().getDisplayMetrics().density);
         v.setViewPadding(R.id.content, pad, pad, pad, pad);
     }

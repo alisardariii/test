@@ -37,6 +37,16 @@
             android:paddingLeft="0dp"
             android:paddingRight="6dp" />
         <TextView
+            android:id="@+id/offline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠ قطع"
+            android:textColor="#FFD2CC"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:paddingRight="6dp"
+            android:visibility="gone" />
+        <TextView
             android:id="@+id/title"
             android:layout_width="0dp"
             android:layout_weight="1"

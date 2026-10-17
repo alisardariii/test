@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import org.json.JSONObject;
@@ -47,6 +49,29 @@ public class MainActivity extends Activity {
         Button s = new Button(this);
         s.setText("ذخیره و امتحان");
         l.addView(s);
+
+        TextView tl = new TextView(this);
+        tl.setText("\nبا زدن روی ویجت:");
+        tl.setTextSize(15);
+        tl.setTextColor(Color.parseColor("#0D1F1A"));
+        tl.setGravity(Gravity.RIGHT);
+        l.addView(tl);
+        RadioGroup rg = new RadioGroup(this);
+        final RadioButton rOpen = new RadioButton(this);
+        rOpen.setText("گزارش زنده باز شود");
+        rOpen.setId(View.generateViewId());
+        final RadioButton rRef = new RadioButton(this);
+        rRef.setText("فقط اطلاعات تازه شود (چیزی باز نشود)");
+        rRef.setId(View.generateViewId());
+        rg.addView(rOpen); rg.addView(rRef);
+        if ("refresh".equals(getSharedPreferences(LiveWidget.PREFS, 0).getString("tap", "open"))) rRef.setChecked(true); else rOpen.setChecked(true);
+        rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            public void onCheckedChanged(RadioGroup g, int id) {
+                getSharedPreferences(LiveWidget.PREFS, 0).edit().putString("tap", id == rRef.getId() ? "refresh" : "open").apply();
+                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext(), null); } }).start();
+            }
+        });
+        l.addView(rg);
 
         final TextView res = new TextView(this);
         res.setTextSize(15);
