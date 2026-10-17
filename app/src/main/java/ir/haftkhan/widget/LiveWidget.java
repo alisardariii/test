@@ -108,7 +108,7 @@ public class LiveWidget extends AppWidgetProvider {
         String url = jsonUrl(ctx);
         String err = null;
         if (url.isEmpty()) {
-            err = "برای تنظیم، اپ «شب زنده هفت‌خوان» را باز کنید";
+            err = "برای تنظیم، اپ «گزارش زنده هفت‌خوان» را باز کنید";
         } else {
             try {
                 String body = fetch(url);

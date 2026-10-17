@@ -71,7 +71,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="right"
-        android:text="برای تنظیم، اپ «شب زنده هفت‌خوان» را باز کنید"
+        android:text="برای تنظیم، اپ «گزارش زنده هفت‌خوان» را باز کنید"
         android:textColor="#A9B8B1"
         android:textSize="11sp"
         android:maxLines="2" />

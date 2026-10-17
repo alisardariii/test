@@ -24,14 +24,14 @@ public class MainActivity extends Activity {
         l.setBackgroundColor(Color.parseColor("#F3EFE4"));
 
         TextView t = new TextView(this);
-        t.setText("ویجت شب زنده هفت‌خوان");
+        t.setText("ویجت گزارش زنده هفت‌خوان");
         t.setTextSize(22);
         t.setTextColor(Color.parseColor("#0D1F1A"));
         t.setGravity(Gravity.RIGHT);
         l.addView(t);
 
         TextView h = new TextView(this);
-        h.setText("\nلینک «داده‌ی خام» را از صفحه‌ی /widget داشبورد کپی کنید و اینجا بگذارید، بعد «ذخیره» را بزنید.\nسپس روی صفحه‌ی اصلی گوشی انگشت را نگه دارید ← ابزارک‌ها (Widgets) ← «شب زنده هفت‌خوان» را اضافه کنید.\n");
+        h.setText("\nلینک «داده‌ی خام» را از صفحه‌ی /widget داشبورد کپی کنید و اینجا بگذارید، بعد «ذخیره» را بزنید.\nسپس روی صفحه‌ی اصلی گوشی انگشت را نگه دارید ← ابزارک‌ها (Widgets) ← «گزارش زنده هفت‌خوان» را اضافه کنید.\n");
         h.setTextSize(15);
         h.setTextColor(Color.parseColor("#333333"));
         h.setGravity(Gravity.RIGHT);

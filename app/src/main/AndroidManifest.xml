@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="شب زنده هفت‌خوان"
+        android:label="گزارش زنده هفت‌خوان"
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
