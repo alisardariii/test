@@ -213,7 +213,8 @@ public class LiveWidget extends AppWidgetProvider {
                 }
             } catch (Exception ignored) {}
         }
-        if (off) v.setInt(R.id.bgfill, "setColorFilter", 0x40FFFFFF); // شیشه‌ای وقتی ارتباط قطع است
+        if (off) v.setInt(R.id.bgfill, "setColorFilter", 0xFF5E6865); // خاکستری وقتی ارتباط قطع است
+        v.setInt(R.id.bgfill, "setImageAlpha", 158);                       // شیشه‌ی نیمه‌شفاف؛ والپیپر از پشت پیداست
         v.setViewVisibility(R.id.offline, off ? View.VISIBLE : View.GONE);
         String at = p.getString("last_at_" + si, "");
         tt(v, tx, R.id.status, off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at)));

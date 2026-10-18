@@ -43,6 +43,7 @@ public class MainCard {
         if (bold && !"system".equals(font) && !Fonts.hasBold(font)) p.setFakeBoldText(true);
         p.setColor(color);
         p.setTextSize(px);
+        p.setShadowLayer(Math.max(1f, px * 0.05f), 0, Math.max(0.5f, px * 0.03f), 0x55000000);   // خوانا روی هر والپیپری
         return p;
     }
 

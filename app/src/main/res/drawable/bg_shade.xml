@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient android:angle="270" android:startColor="#14FFFFFF" android:centerColor="#00000000" android:endColor="#66000000" />
-    <corners android:radius="22dp" />
-</shape>
+<!-- شیشه: براقیت بالا، کمی تیره‌تر پایین، لبه‌ی روشن -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:type="linear" android:angle="270" android:centerY="0.42"
+                android:startColor="#42FFFFFF" android:centerColor="#08FFFFFF" android:endColor="#2E000000" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:type="linear" android:angle="315"
+                android:startColor="#00FFFFFF" android:centerColor="#00FFFFFF" android:endColor="#1FFFFFFF" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <stroke android:width="1.5dp" android:color="#66FFFFFF" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item android:left="1.5dp" android:right="1.5dp" android:top="1.5dp" android:bottom="1.5dp">
+        <shape android:shape="rectangle">
+            <stroke android:width="1dp" android:color="#14000000" />
+            <corners android:radius="21dp" />
+        </shape>
+    </item>
+</layer-list>
