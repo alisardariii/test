@@ -62,17 +62,18 @@ public class Alerts {
             keys.add(f[0]);
             if (first && "watch".equals(f[3])) continue;
             notify(ctx, f[0], name + " — " + f[1], f[2], site.url);
-            log(ctx, name + " — " + f[1], f[2]);
+            log(ctx, name + " — " + f[1], f[2], f[3]);
         }
         while (keys.size() > 300) keys.remove(0);
         p.edit().putString(seenKey, new JSONArray(keys).toString()).apply();
     }
 
-    static void log(Context ctx, String title, String text) {
+    static void log(Context ctx, String title, String text) { log(ctx, title, text, ""); }
+    static void log(Context ctx, String title, String text, String type) {
         SharedPreferences p = ctx.getSharedPreferences(LiveWidget.PREFS, 0);
         try {
             JSONArray a = new JSONArray(p.getString("log", "[]"));
-            a.put(new JSONObject().put("t", new SimpleDateFormat("MM/dd HH:mm", Locale.US).format(new Date())).put("title", title).put("text", text));
+            a.put(new JSONObject().put("t", new SimpleDateFormat("MM/dd HH:mm", Locale.US).format(new Date())).put("title", title).put("text", text).put("k", type));
             JSONArray b = new JSONArray();
             for (int i = Math.max(0, a.length() - 30); i < a.length(); i++) b.put(a.get(i));
             p.edit().putString("log", b.toString()).apply();

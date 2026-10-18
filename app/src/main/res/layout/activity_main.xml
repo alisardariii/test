@@ -1,179 +1,232 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="#F7F3EA" android:fillViewport="true">
-<LinearLayout android:id="@+id/page" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="vertical" android:layoutDirection="rtl">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:background="@drawable/hdr" android:orientation="horizontal" android:gravity="center_vertical"
-        android:paddingLeft="22dp" android:paddingRight="22dp" android:paddingTop="44dp" android:paddingBottom="26dp">
-        <ImageView android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_launcher" android:scaleType="fitCenter" />
-        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-            android:orientation="vertical" android:layout_marginStart="14dp">
-            <TextView android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="رادرس" android:textColor="#FFFFFF" android:textSize="22sp" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="گزارش زنده و هشدارهای رستوران" android:textColor="#F2C46B" android:textSize="13sp" />
-        </LinearLayout>
-    </LinearLayout>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/page" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F6F2EA" android:layoutDirection="rtl">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+    <!-- ═════════ صفحه‌ی اصلی ═════════ -->
+    <ScrollView android:id="@+id/pg_home" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="22dp" android:paddingBottom="14dp">
+            <ImageView android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_launcher" android:scaleType="fitCenter" />
+            <TextView android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+                android:text="رادرس" android:textColor="#0B3F36" android:textSize="23sp" />
+        </LinearLayout>
+
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp">
-            <LinearLayout android:id="@+id/guide_head" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:gravity="center_vertical" android:clickable="true" android:focusable="true">
-                <TextView android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-                    android:text="راهنمای شروع" android:textColor="#0B3F36" android:textSize="17sp" />
-                <TextView android:id="@+id/guide_arrow" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="▾" android:textColor="#0F5C4D" android:textSize="18sp" />
+            android:background="@drawable/hero" android:padding="18dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:id="@+id/hero_name" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:text="—" android:textColor="#FFFFFF" android:textSize="16sp" android:maxLines="1" />
+                <TextView android:id="@+id/hero_state" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:background="@drawable/hero_btn" android:paddingLeft="10dp" android:paddingRight="10dp" android:paddingTop="3dp" android:paddingBottom="3dp"
+                    android:textColor="#FFFFFF" android:textSize="13sp" />
             </LinearLayout>
-            <LinearLayout android:id="@+id/steps" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:layout_marginTop="6dp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="وضعیت" android:textColor="#0B3F36" android:textSize="17sp" />
-            <LinearLayout android:id="@+id/status_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:layout_marginTop="6dp" />
-            <TextView android:id="@+id/refresh_now" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="match_parent" android:layout_height="46dp" android:background="@drawable/btn_small"
-                android:text="⟳  به‌روزرسانی همین الان" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="10dp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="مجموعه‌ها" android:textColor="#0B3F36" android:textSize="17sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                android:text="هر مجموعه = یک رستوران یا هتل با لینک «داده‌ی خام» صفحه‌ی ‎/widget‎ داشبوردش." android:textColor="#5B6A64" android:textSize="13sp" />
-            <LinearLayout android:id="@+id/sites_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:layout_marginTop="8dp" />
-            <TextView android:id="@+id/add_site" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="match_parent" android:layout_height="48dp" android:background="@drawable/btn_ghost"
-                android:text="+  افزودن مجموعه" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="12dp" />
-            <LinearLayout android:id="@+id/form" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"
-                android:background="@drawable/field" android:padding="14dp">
-                <TextView android:id="@+id/form_title" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="مجموعه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
-                    android:text="اسم" android:textColor="#5B6A64" android:textSize="13sp" />
-                <EditText android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp" android:background="@drawable/card" android:padding="12dp"
-                    android:hint="مثلاً هفت‌خوان" android:textColor="#1D2B27" android:textColorHint="#93A099" android:textSize="14sp" android:inputType="text" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
-                    android:gravity="center_vertical" android:layout_marginTop="10dp" android:baselineAligned="false">
-                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-                        android:text="لینک داده‌ی خام" android:textColor="#5B6A64" android:textSize="13sp" />
-                    <TextView android:id="@+id/paste" android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:clickable="true" android:focusable="true" android:padding="4dp"
-                        android:text="📋 چسباندن" android:textColor="#0F5C4D" android:textSize="13sp" />
-                </LinearLayout>
-                <EditText android:id="@+id/url" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp" android:background="@drawable/card" android:padding="12dp"
-                    android:hint="http://…/w/….json" android:textColor="#1D2B27" android:textColorHint="#93A099"
-                    android:textSize="13sp" android:textDirection="ltr" android:inputType="textUri" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:baselineAligned="false" android:layout_marginTop="12dp">
-                    <TextView android:id="@+id/save" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_primary"
-                android:text="ذخیره" android:textColor="#2A1C00" android:textSize="15sp" android:layout_weight="1.5" />
-                    <TextView android:id="@+id/cancel" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_ghost"
-                android:text="انصراف" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_weight="1" android:layout_marginStart="10dp" />
-                </LinearLayout>
-                <TextView android:id="@+id/result" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:text="فروش امشب" android:textColor="#CFE3DA" android:textSize="13sp" />
+            <TextView android:id="@+id/hero_amt" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="—" android:textColor="#FFFFFF" android:textSize="32sp" android:maxLines="1" />
+            <TextView android:id="@+id/hero_sub" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#FFC2B8" android:textSize="14sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:layout_marginTop="14dp" android:baselineAligned="false">
+                <TextView android:id="@+id/refresh_now" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="46dp"
+                    android:gravity="center" android:clickable="true" android:focusable="true" android:background="@drawable/hero_btn2"
+                    android:text="⟳  تازه کن" android:textColor="#1A1405" android:textSize="15sp" />
+                <TextView android:id="@+id/hero_open" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="46dp"
+                    android:layout_marginStart="10dp" android:gravity="center" android:clickable="true" android:focusable="true" android:background="@drawable/hero_btn"
+                    android:text="باز کردن گزارش" android:textColor="#FFFFFF" android:textSize="15sp" />
             </LinearLayout>
         </LinearLayout>
+
+        <TextView android:id="@+id/perm_warn" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:padding="12dp" android:background="@drawable/chip_bad" android:textColor="#B03A2E"
+            android:textSize="13sp" android:visibility="gone" android:clickable="true" android:focusable="true" />
+
+        <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
+            android:layout_marginStart="6dp" android:text="آخرین هشدار" android:textColor="#7A8A83" android:textSize="13sp" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="هشدارها" android:textColor="#0B3F36" android:textSize="17sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                android:text="برای موارد زیر روی گوشی پیغام می‌آید (هر ۱۵ دقیقه بررسی؛ هر مورد یک بار)." android:textColor="#5B6A64" android:textSize="13sp" />
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" android:layout_marginTop="10dp" />
-            <Switch android:id="@+id/al_tables" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="میز بیشتر از حد مجاز نشسته" android:textColor="#1D2B27" android:textSize="15sp" />
-            <LinearLayout android:id="@+id/min_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
-                android:gravity="center_vertical" android:baselineAligned="false" android:paddingBottom="6dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="حد مجاز:"
-                    android:textColor="#5B6A64" android:textSize="14sp" />
-                <EditText android:id="@+id/al_min" android:layout_width="80dp" android:layout_height="wrap_content" android:layout_marginStart="10dp"
-                    android:background="@drawable/field" android:padding="8dp" android:gravity="center" android:inputType="number"
-                    android:textColor="#1D2B27" android:textSize="15sp" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
-                    android:text="دقیقه" android:textColor="#5B6A64" android:textSize="14sp" />
+            android:background="@drawable/grp" android:layout_marginTop="6dp">
+            <LinearLayout android:id="@+id/last_alert" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0ECE4" />
+            <LinearLayout android:id="@+id/row_log" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:padding="14dp" android:background="@drawable/rowsel" android:clickable="true" android:focusable="true">
+                <TextView android:id="@+id/row_log_t" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:text="همه‌ی هشدارها" android:textColor="#0F5C4D" android:textSize="14sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="‹" android:textColor="#B9C2BE" android:textSize="20sp" />
             </LinearLayout>
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" />
-            <Switch android:id="@+id/al_watch" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="نگهبان صندوق (حذف فیش، تخفیف بعد از چاپ، پرداخت تکراری)" android:textColor="#1D2B27" android:textSize="15sp" />
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EFE9DC" />
-            <Switch android:id="@+id/al_taraz" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="آخر شب، اگر تراز صندوق صفر نشده" android:textColor="#1D2B27" android:textSize="15sp" />
-            <Switch android:id="@+id/al_sum" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:paddingTop="10dp" android:paddingBottom="10dp" android:text="خلاصه‌ی فروش امشب (۲۳:۳۰ یا وقتی آخرین فیش بسته شد)" android:textColor="#1D2B27" android:textSize="15sp" />
-            <TextView android:id="@+id/perm_warn" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" android:padding="12dp" android:background="@drawable/chip_bad" android:textColor="#B03A2E"
-                android:textSize="13sp" android:visibility="gone" android:clickable="true" android:focusable="true" />
+        </LinearLayout>
+
+        <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
+            android:layout_marginStart="6dp" android:text="تنظیمات" android:textColor="#7A8A83" android:textSize="13sp" />
+        <LinearLayout android:id="@+id/menu" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/grp" android:layout_marginTop="6dp" />
+
+        <TextView android:id="@+id/ver" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
+            android:layout_marginTop="18dp" android:textColor="#93A099" android:textSize="12sp" />
+    </LinearLayout>
+    </ScrollView>
+
+    <!-- ═════════ مجموعه‌ها ═════════ -->
+    <ScrollView android:id="@+id/pg_sites" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
+        <TextView android:tag="hdr" android:text="مجموعه‌ها" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="هر مجموعه یک رستوران یا هتل است، با لینک «داده‌ی خام» صفحه‌ی ‎/widget‎ داشبوردش." android:textColor="#5B6A64" android:textSize="13sp" />
+        <LinearLayout android:id="@+id/status_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:layout_marginTop="8dp" />
+        <LinearLayout android:id="@+id/sites_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:layout_marginTop="4dp" />
+        <TextView android:id="@+id/add_site" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+            android:layout_width="match_parent" android:layout_height="48dp" android:background="@drawable/btn_ghost"
+            android:text="+  افزودن مجموعه" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="12dp" />
+        <LinearLayout android:id="@+id/form" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"
+            android:background="@drawable/grp" android:padding="16dp">
+            <TextView android:id="@+id/form_title" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="مجموعه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:text="اسم" android:textColor="#5B6A64" android:textSize="13sp" />
+            <EditText android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:background="@drawable/field" android:padding="12dp"
+                android:hint="مثلاً هفت‌خوان" android:textColor="#1D2B27" android:textColorHint="#93A099" android:textSize="14sp" android:inputType="text" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:layout_marginTop="10dp" android:baselineAligned="false">
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:text="لینک داده‌ی خام" android:textColor="#5B6A64" android:textSize="13sp" />
+                <TextView android:id="@+id/paste" android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:clickable="true" android:focusable="true" android:padding="4dp"
+                    android:text="📋 چسباندن" android:textColor="#0F5C4D" android:textSize="13sp" />
+            </LinearLayout>
+            <EditText android:id="@+id/url" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:background="@drawable/field" android:padding="12dp"
+                android:hint="http://…/w/….json" android:textColor="#1D2B27" android:textColorHint="#93A099"
+                android:textSize="13sp" android:textDirection="ltr" android:inputType="textUri" />
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:baselineAligned="false" android:layout_marginTop="12dp">
-                <TextView android:id="@+id/al_save" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_primary"
-                android:text="ذخیره‌ی تنظیمات" android:textColor="#2A1C00" android:textSize="15sp" android:layout_weight="1.4" />
-                <TextView android:id="@+id/al_test" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_ghost"
-                android:text="هشدار آزمایشی" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_weight="1" android:layout_marginStart="10dp" />
+                <TextView android:id="@+id/save" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                    android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_primary"
+                    android:text="ذخیره" android:textColor="#2A1C00" android:textSize="15sp" android:layout_weight="1.5" />
+                <TextView android:id="@+id/cancel" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+                    android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_ghost"
+                    android:text="انصراف" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_weight="1" android:layout_marginStart="10dp" />
             </LinearLayout>
-            <TextView android:id="@+id/al_res" android:layout_width="match_parent" android:layout_height="wrap_content"
+            <TextView android:id="@+id/result" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp"
-                android:text="آخرین هشدارها" android:textColor="#0F5C4D" android:textSize="14sp" />
-            <LinearLayout android:id="@+id/log_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+    </ScrollView>
+
+    <!-- ═════════ هشدارها ═════════ -->
+    <ScrollView android:id="@+id/pg_alerts" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
+        <TextView android:tag="hdr" android:text="هشدارها" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/grp" android:paddingLeft="16dp" android:paddingRight="16dp">
+            <Switch android:id="@+id/al_tables" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingTop="14dp" android:paddingBottom="4dp" android:text="میز بیش از حد مجاز نشسته" android:textColor="#1D2B27" android:textSize="15sp" />
+            <LinearLayout android:id="@+id/min_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:baselineAligned="false" android:paddingBottom="12dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="حد مجاز"
+                    android:textColor="#7A8A83" android:textSize="13sp" />
+                <EditText android:id="@+id/al_min" android:layout_width="70dp" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+                    android:background="@drawable/field" android:padding="6dp" android:gravity="center" android:inputType="number"
+                    android:textColor="#1D2B27" android:textSize="15sp" android:imeOptions="actionDone" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
+                    android:text="دقیقه" android:textColor="#7A8A83" android:textSize="13sp" />
+            </LinearLayout>
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0ECE4" />
+            <Switch android:id="@+id/al_watch" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingTop="14dp" android:paddingBottom="14dp" android:text="نگهبان صندوق\nحذف فیش، تخفیف بعد از چاپ، پرداخت تکراری" android:textColor="#1D2B27" android:textSize="15sp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0ECE4" />
+            <Switch android:id="@+id/al_taraz" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingTop="14dp" android:paddingBottom="14dp" android:text="تراز صفر نشده (آخر شب)" android:textColor="#1D2B27" android:textSize="15sp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0ECE4" />
+            <Switch android:id="@+id/al_sum" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingTop="14dp" android:paddingBottom="14dp" android:text="خلاصه‌ی فروش امشب" android:textColor="#1D2B27" android:textSize="15sp" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center"
+            android:text="هر تغییر همان لحظه ذخیره می‌شود." android:textColor="#93A099" android:textSize="12sp" />
+        <TextView android:id="@+id/al_test" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
+            android:layout_width="match_parent" android:layout_height="48dp" android:background="@drawable/grp"
+            android:text="ارسال هشدار آزمایشی" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="10dp" />
+        <TextView android:id="@+id/al_res" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
+        <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
+            android:layout_marginStart="6dp" android:text="تاریخچه" android:textColor="#7A8A83" android:textSize="13sp" />
+        <LinearLayout android:id="@+id/log_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@drawable/grp" android:layout_marginTop="6dp" />
+    </LinearLayout>
+    </ScrollView>
+
+    <!-- ═════════ ظاهر ویجت ═════════ -->
+    <ScrollView android:id="@+id/pg_look" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
+        <TextView android:tag="hdr" android:text="ظاهر ویجت" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/hero" android:padding="16dp">
+            <ImageView android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="170dp" android:scaleType="fitCenter" />
+        </FrameLayout>
+        <LinearLayout android:id="@+id/font_box" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/grp" android:layout_marginTop="14dp">
+            <LinearLayout android:id="@+id/font_dd" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:padding="16dp" android:background="@drawable/rowsel" android:clickable="true" android:focusable="true">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="فونت" android:textColor="#1D2B27" android:textSize="15sp" />
+                <TextView android:id="@+id/font_cur" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:gravity="left" android:textColor="#0B3F36" android:textSize="19sp" android:maxLines="1" />
+                <TextView android:id="@+id/font_arrow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+                    android:text="▾" android:textColor="#7A8A83" android:textSize="16sp" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/font_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" />
+        </LinearLayout>
+        <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
+            android:layout_marginStart="6dp" android:text="با زدن روی ویجت" android:textColor="#7A8A83" android:textSize="13sp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+            android:background="@drawable/seg_bg" android:padding="4dp" android:layout_marginTop="6dp" android:baselineAligned="false">
+            <TextView android:id="@+id/tapOpen" android:layout_width="0dp" android:layout_weight="1" android:layout_height="42dp" android:gravity="center"
+                android:clickable="true" android:focusable="true" android:text="گزارش باز شود" android:textColor="#55625D" android:textSize="14sp" />
+            <TextView android:id="@+id/tapRefresh" android:layout_width="0dp" android:layout_weight="1" android:layout_height="42dp" android:gravity="center"
+                android:layout_marginStart="4dp" android:clickable="true" android:focusable="true" android:text="فقط تازه شود" android:textColor="#55625D" android:textSize="14sp" />
         </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="با زدن روی ویجت" android:textColor="#0B3F36" android:textSize="17sp" />
-            <RadioGroup android:id="@+id/tap" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp">
-                <RadioButton android:id="@+id/tapOpen" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:paddingTop="10dp" android:paddingBottom="10dp" android:buttonTint="#E3A12F"
-                    android:text="گزارش زنده باز شود" android:textColor="#1D2B27" android:textSize="15sp" />
-                <RadioButton android:id="@+id/tapRefresh" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:paddingTop="10dp" android:paddingBottom="10dp" android:buttonTint="#E3A12F"
-                    android:text="فقط اطلاعات تازه شود (چیزی باز نشود)" android:textColor="#1D2B27" android:textSize="15sp" />
-            </RadioGroup>
+            android:background="@drawable/grp" android:layout_marginTop="14dp" android:paddingLeft="16dp" android:paddingRight="16dp">
             <Switch android:id="@+id/privacy" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" android:paddingTop="10dp" android:paddingBottom="10dp"
-                android:text="حالت مخفی: مبلغ‌ها روی ویجت دیده نشوند (با زدن روی ویجت ۳۰ ثانیه نشان داده می‌شوند)" android:textColor="#1D2B27" android:textSize="15sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="انتخاب شما همان لحظه ذخیره می‌شود."
-                android:textColor="#93A099" android:textSize="12sp" />
+                android:paddingTop="14dp" android:paddingBottom="14dp"
+                android:text="حالت مخفی\nمبلغ‌ها پنهان؛ با زدن روی ویجت ۳۰ ثانیه دیده می‌شوند" android:textColor="#1D2B27" android:textSize="15sp" />
         </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:gravity="center"
+            android:text="هر تغییر همان لحظه روی ویجت اعمال می‌شود." android:textColor="#93A099" android:textSize="12sp" />
+    </LinearLayout>
+    </ScrollView>
+
+    <!-- ═════════ به‌روزرسانی ═════════ -->
+    <ScrollView android:id="@+id/pg_update" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
+        <TextView android:tag="hdr" android:text="به‌روزرسانی" android:layout_width="match_parent" android:layout_height="wrap_content" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="فونت ویجت" android:textColor="#0B3F36" android:textSize="17sp" />
-            <RadioGroup android:id="@+id/fonts" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="هر گزینه با همان فونت نوشته شده است. انتخاب شما همان لحظه روی ویجت اعمال می‌شود."
-                android:textColor="#93A099" android:textSize="12sp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
-            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="به‌روزرسانی برنامه" android:textColor="#0B3F36" android:textSize="17sp" />
-            <TextView android:id="@+id/ver" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:textColor="#5B6A64" android:textSize="13sp" />
+            android:background="@drawable/grp" android:padding="18dp">
+            <TextView android:id="@+id/ver2" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#0B3F36" android:textSize="16sp" />
             <TextView android:id="@+id/upd" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
                 android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/btn_ghost"
-                android:text="بررسی نسخه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="12dp" />
+                android:text="بررسی نسخه‌ی جدید" android:textColor="#0F5C4D" android:textSize="15sp" android:layout_marginTop="14dp" />
             <TextView android:id="@+id/updres" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
         </LinearLayout>
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
-            android:layout_marginTop="18dp" android:layout_marginBottom="8dp" android:text="رادرس — سیستم مدیریت رستوران"
-            android:textColor="#93A099" android:textSize="12sp" />
     </LinearLayout>
-</LinearLayout>
-</ScrollView>
+    </ScrollView>
+
+    <!-- ═════════ راهنما ═════════ -->
+    <ScrollView android:id="@+id/pg_guide" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
+        <TextView android:tag="hdr" android:text="راهنمای نصب ویجت" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <LinearLayout android:id="@+id/steps" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@drawable/grp" android:padding="16dp" />
+    </LinearLayout>
+    </ScrollView>
+</FrameLayout>

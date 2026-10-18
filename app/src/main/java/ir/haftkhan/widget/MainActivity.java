@@ -45,10 +45,14 @@ public class MainActivity extends Activity {
     SharedPreferences p;
     int editing = -1;
 
+    int page = R.id.pg_home;
+    final int[] PAGES = {R.id.pg_home, R.id.pg_sites, R.id.pg_alerts, R.id.pg_look, R.id.pg_update, R.id.pg_guide};
+
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        getWindow().setStatusBarColor(Color.parseColor("#0B3F36"));
+        getWindow().setStatusBarColor(Color.parseColor("#F6F2EA"));
+        if (Build.VERSION.SDK_INT >= 23) getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         setContentView(R.layout.activity_main);
         try {
             reg = Typeface.createFromAsset(getAssets(), "fonts/samim.ttf");
@@ -56,23 +60,33 @@ public class MainActivity extends Activity {
         } catch (Exception e) { reg = Typeface.DEFAULT; bold = Typeface.DEFAULT_BOLD; }
         p = getSharedPreferences(LiveWidget.PREFS, 0);
 
-        // راهنما (اگر مجموعه‌ای هست، جمع شده)
+        // سرصفحه‌ی زیرصفحه‌ها: «→ عنوان»
+        for (int id : PAGES) headers(findViewById(id));
+
+        // راهنما
         String[] steps = {
                 "در «مجموعه‌ها» دکمه‌ی «+ افزودن مجموعه» را بزنید، اسم و لینک «داده‌ی خام» صفحه‌ی ‎/widget‎ داشبورد را بگذارید و «ذخیره» را بزنید.",
                 "روی صفحه‌ی اصلی گوشی، جای خالی را نگه دارید ← ابزارک‌ها (Widgets).",
                 "زیر «رادرس»، ویجت «گزارش زنده» را روی صفحه بکشید (اگر چند مجموعه دارید، مجموعه را انتخاب کنید).",
                 "ویجت را مربعی، عریض یا بلند کنید؛ در حالت عریض و بلند، قدیمی‌ترین میز و نمودار هم می‌آید.",
-                "در «هشدارها» موارد دلخواه را روشن کنید و «ذخیره‌ی تنظیمات» را بزنید."};
-        final LinearLayout box = (LinearLayout) findViewById(R.id.steps);
+                "در «هشدارها» موارد دلخواه را روشن کنید؛ همان لحظه ذخیره می‌شود."};
+        LinearLayout box = (LinearLayout) findViewById(R.id.steps);
         for (int i = 0; i < steps.length; i++) box.addView(stepRow(i + 1, steps[i]));
-        setGuide(Sites.all(this).isEmpty());
-        findViewById(R.id.guide_head).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { setGuide(box.getVisibility() != View.VISIBLE); }
-        });
 
-        // وضعیت
+        // صفحه‌ی اصلی
         findViewById(R.id.refresh_now).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { refreshAll(true); }
+        });
+        findViewById(R.id.hero_open).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                List<Sites.Site> l = Sites.all(MainActivity.this);
+                if (l.isEmpty()) { go(R.id.pg_sites); return; }
+                String u = Sites.jsonUrl(l.get(0).url);
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)))); } catch (Exception ignored) {}
+            }
+        });
+        findViewById(R.id.row_log).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { go(R.id.pg_alerts); }
         });
 
         // مجموعه‌ها
@@ -97,14 +111,25 @@ public class MainActivity extends Activity {
         });
         fillSites();
 
-        // هشدارها
-        styleSwitch(R.id.al_tables, "al_tables");
-        styleSwitch(R.id.al_watch, "al_watch");
-        styleSwitch(R.id.al_taraz, "al_taraz");
-        styleSwitch(R.id.al_sum, "al_sum");
-        ((EditText) findViewById(R.id.al_min)).setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
-        findViewById(R.id.al_save).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { saveAlerts(); }
+        // هشدارها — هر تغییر همان لحظه ذخیره می‌شود
+        alertSwitch(R.id.al_tables, "al_tables", "میز بیش از حد مجاز نشسته", "وقتی میزی در سالن بیشتر از عدد زیر بماند");
+        alertSwitch(R.id.al_watch, "al_watch", "نگهبان صندوق", "حذف فیش، تخفیف بعد از چاپ، پرداخت تکراری");
+        alertSwitch(R.id.al_taraz, "al_taraz", "تراز صفر نشده", "آخر شب، اگر حساب فیش‌ها باز مانده باشد");
+        alertSwitch(R.id.al_sum, "al_sum", "خلاصه‌ی فروش امشب", "آخر شب: فروش، تعداد فیش و سهم هر روش پرداخت");
+        final EditText mn = (EditText) findViewById(R.id.al_min);
+        mn.setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
+        mn.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int a, int b2, int c) {}
+            public void onTextChanged(CharSequence s, int a, int b2, int c) {}
+            public void afterTextChanged(android.text.Editable e) {
+                int m = parseNum(e.toString());
+                if (m >= 5) p.edit().putInt("al_min", m).apply();
+            }
+        });
+        mn.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean has) {
+                if (!has) mn.setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
+            }
         });
         findViewById(R.id.al_test).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -123,50 +148,198 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 7);
 
-        // با زدن روی ویجت
-        RadioGroup rg = (RadioGroup) findViewById(R.id.tap);
-        ((RadioButton) findViewById("refresh".equals(p.getString("tap", "open")) ? R.id.tapRefresh : R.id.tapOpen)).setChecked(true);
-        rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            public void onCheckedChanged(RadioGroup g, int id) {
-                p.edit().putString("tap", id == R.id.tapRefresh ? "refresh" : "open").apply();
-                Toast.makeText(MainActivity.this, "ذخیره شد", Toast.LENGTH_SHORT).show();
-                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
+        // ظاهر ویجت
+        View.OnClickListener seg = new View.OnClickListener() {
+            public void onClick(View v) {
+                p.edit().putString("tap", v.getId() == R.id.tapRefresh ? "refresh" : "open").apply();
+                fillSeg();
+                renderWidget();
             }
-        });
-
-        // حالت مخفی
+        };
+        findViewById(R.id.tapOpen).setOnClickListener(seg);
+        findViewById(R.id.tapRefresh).setOnClickListener(seg);
         final Switch pv = (Switch) findViewById(R.id.privacy);
-        styleSwitch(R.id.privacy, "privacy");
+        tint(pv);
+        twoLine(pv, "حالت مخفی", "مبلغ‌ها پنهان؛ با زدن روی ویجت ۳۰ ثانیه دیده می‌شوند");
         pv.setChecked(p.getBoolean("privacy", false));
         pv.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton b, boolean v) {
                 p.edit().putBoolean("privacy", v).putLong("reveal_until", 0).apply();
-                Toast.makeText(MainActivity.this, v ? "حالت مخفی روشن شد" : "حالت مخفی خاموش شد", Toast.LENGTH_SHORT).show();
+                preview();
                 new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); LiveWidget.tile(getApplicationContext()); } }).start();
             }
+        });
+        findViewById(R.id.font_dd).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { setFontList(findViewById(R.id.font_list).getVisibility() != View.VISIBLE); }
         });
 
         setupUpdate();
         applyFont(findViewById(R.id.page));
+        fillSeg();
         fillFonts();
+        fillMenu();
         refreshAll(false);
     }
 
-    @Override protected void onResume() { super.onResume(); permState(); fillStatus(); fillLog(); }
+    @Override protected void onResume() { super.onResume(); permState(); fillHome(); fillStatus(); fillLog(); fillMenu(); }
 
-    // ───── راهنما ─────
-    void setGuide(boolean open) {
-        findViewById(R.id.steps).setVisibility(open ? View.VISIBLE : View.GONE);
-        ((TextView) findViewById(R.id.guide_arrow)).setText(open ? "▴" : "▾");
+    // ───── جابه‌جایی بین صفحه‌ها ─────
+    void go(int id) {
+        if (id == R.id.pg_look) { setFontList(false); preview(); }
+        if (id == R.id.pg_home) { fillHome(); fillMenu(); }
+        for (int x : PAGES) findViewById(x).setVisibility(x == id ? View.VISIBLE : View.GONE);
+        ((android.widget.ScrollView) findViewById(id)).scrollTo(0, 0);
+        View f = getCurrentFocus();
+        if (f != null) {
+            f.clearFocus();
+            android.view.inputmethod.InputMethodManager im = (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (im != null) im.hideSoftInputFromWindow(f.getWindowToken(), 0);
+        }
+        page = id;
     }
 
-    // ───── وضعیت ─────
+    @Override public void onBackPressed() {
+        if (page != R.id.pg_home) go(R.id.pg_home); else super.onBackPressed();
+    }
+
+    void headers(View v) {
+        if (v instanceof TextView && "hdr".equals(v.getTag())) {
+            TextView t = (TextView) v;
+            t.setText("→   " + t.getText());
+            t.setTag("b");
+            t.setTextColor(Color.parseColor("#0B3F36")); t.setTextSize(21);
+            t.setPadding(dp(4), dp(22), dp(4), dp(16));
+            t.setClickable(true);
+            t.setOnClickListener(new View.OnClickListener() { public void onClick(View x) { go(R.id.pg_home); } });
+            return;
+        }
+        if (v instanceof ViewGroup) { ViewGroup g = (ViewGroup) v; for (int i = 0; i < g.getChildCount(); i++) headers(g.getChildAt(i)); }
+    }
+
+    // ───── منوی تنظیمات ─────
+    void fillMenu() {
+        LinearLayout m = (LinearLayout) findViewById(R.id.menu);
+        m.removeAllViews();
+        int ns = Sites.all(this).size();
+        int on = 0;
+        for (String k : new String[]{"al_tables", "al_watch", "al_taraz", "al_sum"}) if (p.getBoolean(k, true)) on++;
+        String fn = "";
+        for (String[] f : Fonts.LIST) if (f[0].equals(Fonts.current(this))) fn = f[1];
+        menuRow(m, "🏪", "#E7F3EE", "مجموعه‌ها", ns == 0 ? "هنوز نیست" : LiveWidget.fa(String.valueOf(ns)) + " مجموعه", null, R.id.pg_sites);
+        menuRow(m, "🔔", "#FFF2DA", "هشدارها", LiveWidget.fa(String.valueOf(on)) + " از ۴ روشن", null, R.id.pg_alerts);
+        menuRow(m, "▦", "#EAF0FF", "ظاهر ویجت", fn, null, R.id.pg_look);
+        menuRow(m, "⬇", "#F1ECFF", "به‌روزرسانی", newApk == null ? LiveWidget.fa(myName()) : null, newApk == null ? null : "نسخه‌ی " + LiveWidget.fa(newName), R.id.pg_update);
+        menuRow(m, "?", "#EEF1EF", "راهنمای نصب ویجت", null, null, R.id.pg_guide);
+    }
+
+    void menuRow(LinearLayout m, String ico, String icoBg, String title, String val, String badge, final int target) {
+        if (m.getChildCount() > 0) {
+            View d = new View(this); d.setBackgroundColor(Color.parseColor("#F0ECE4"));
+            LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+            dl.setMarginStart(dp(62)); m.addView(d, dl);
+        }
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.HORIZONTAL); r.setGravity(Gravity.CENTER_VERTICAL);
+        r.setPadding(dp(16), dp(13), dp(16), dp(13));
+        r.setBackgroundResource(R.drawable.rowsel); r.setClickable(true);
+        r.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { go(target); } });
+        TextView ic = new TextView(this);
+        ic.setText(ico); ic.setGravity(Gravity.CENTER); ic.setTextSize(17); ic.setTextColor(Color.parseColor("#0F5C4D"));
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setColor(Color.parseColor(icoBg)); g.setCornerRadius(dp(10)); ic.setBackground(g);
+        r.addView(ic, new LinearLayout.LayoutParams(dp(34), dp(34)));
+        TextView t = new TextView(this);
+        t.setText(title); t.setTextSize(16); t.setTextColor(Color.parseColor("#1D2B27")); t.setTypeface(reg);
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        tl.setMarginStart(dp(12)); r.addView(t, tl);
+        if (val != null && !val.isEmpty()) {
+            TextView v = new TextView(this);
+            v.setText(val); v.setTextSize(14); v.setTextColor(Color.parseColor("#7A8A83")); v.setTypeface(reg);
+            r.addView(v);
+        }
+        if (badge != null) {
+            TextView v = new TextView(this);
+            v.setText(badge); v.setTextSize(12); v.setTextColor(Color.WHITE); v.setTypeface(bold);
+            v.setBackgroundResource(R.drawable.badge); v.setPadding(dp(9), dp(2), dp(9), dp(2));
+            r.addView(v);
+        }
+        TextView ch = new TextView(this);
+        ch.setText("‹"); ch.setTextSize(20); ch.setTextColor(Color.parseColor("#B9C2BE"));
+        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cl.setMarginStart(dp(10)); r.addView(ch, cl);
+        m.addView(r);
+    }
+
+    // ───── کارت سبز صفحه‌ی اصلی ─────
+    void fillHome() {
+        List<Sites.Site> l = Sites.all(this);
+        TextView nm = (TextView) findViewById(R.id.hero_name), st = (TextView) findViewById(R.id.hero_state),
+                am = (TextView) findViewById(R.id.hero_amt), sub = (TextView) findViewById(R.id.hero_sub),
+                op = (TextView) findViewById(R.id.hero_open);
+        if (l.isEmpty()) {
+            nm.setText("هنوز مجموعه‌ای اضافه نشده"); st.setVisibility(View.GONE);
+            am.setText("—"); sub.setText("برای شروع، یک مجموعه اضافه کنید."); sub.setTextColor(Color.parseColor("#CFE3DA"));
+            op.setText("+ افزودن مجموعه");
+        } else {
+            op.setText("باز کردن گزارش");
+            nm.setText(l.get(0).name);
+            boolean off = p.getBoolean("offline_0", false);
+            String at = p.getString("last_at_0", "");
+            st.setVisibility(View.VISIBLE);
+            st.setText((off ? "✕ قطع" : "● وصل") + (at.isEmpty() ? "" : " · " + LiveWidget.fa(at)));
+            st.setTextColor(Color.parseColor(off ? "#FFC2B8" : "#FFFFFF"));
+            JSONObject x = null;
+            try { x = new JSONObject(p.getString("last_0", "")); } catch (Exception ignored) {}
+            if (x == null) { am.setText("—"); sub.setText("هنوز اطلاعاتی نیامده؛ «تازه کن» را بزنید."); sub.setTextColor(Color.parseColor("#CFE3DA")); }
+            else {
+                android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(x.optString("today_t", "—"));
+                int s0 = sb.length(); sb.append("  تومان");
+                sb.setSpan(new android.text.style.RelativeSizeSpan(0.45f), s0, sb.length(), 0);
+                sb.setSpan(new CustomFont(reg), s0, sb.length(), 0);
+                am.setText(sb);
+                StringBuilder s = new StringBuilder();
+                int col = Color.parseColor("#CFE3DA");
+                if (!x.isNull("pct")) {
+                    double pc = x.optDouble("pct", 0);
+                    s.append(pc >= 0 ? "▲ " : "▼ ").append(LiveWidget.fa(String.valueOf(Math.round(Math.abs(pc))))).append("٪ از هفته‌ی قبل");
+                    col = Color.parseColor(pc >= 0 ? "#C8FFD9" : "#FFC2B8");
+                }
+                String o = x.optString("orders_t", "");
+                if (!o.isEmpty()) s.append(s.length() > 0 ? "  |  " : "").append(o).append(" فیش");
+                int n = 0;
+                JSONArray open = x.optJSONArray("open");
+                if (open != null) for (int k = 0; k < open.length(); k++) {
+                    JSONObject t = open.optJSONObject(k);
+                    if (t != null && t.optBoolean("indoor") && t.optInt("minutes") <= 360) n++;
+                }
+                s.append(s.length() > 0 ? "  |  " : "").append(n == 0 ? "میز بازی نیست" : LiveWidget.fa(String.valueOf(n)) + " میز باز");
+                sub.setText(s.toString()); sub.setTextColor(col);
+            }
+        }
+        // آخرین هشدار
+        LinearLayout la = (LinearLayout) findViewById(R.id.last_alert);
+        la.removeAllViews();
+        JSONArray a;
+        try { a = new JSONArray(p.getString("log", "[]")); } catch (Exception e) { a = new JSONArray(); }
+        if (a.length() == 0) {
+            TextView t = line("هنوز هشداری نیامده.", "#93A099", false); t.setPadding(dp(16), dp(14), dp(16), dp(14)); la.addView(t);
+        } else la.addView(alertRow(a.optJSONObject(a.length() - 1)));
+        ((TextView) findViewById(R.id.row_log_t)).setText("همه‌ی هشدارها" + (a.length() > 0 ? " (" + LiveWidget.fa(String.valueOf(a.length())) + ")" : ""));
+    }
+
+    static class CustomFont extends android.text.style.MetricAffectingSpan {
+        final Typeface tf;
+        CustomFont(Typeface t) { tf = t; }
+        @Override public void updateDrawState(android.text.TextPaint tp) { tp.setTypeface(tf); }
+        @Override public void updateMeasureState(android.text.TextPaint tp) { tp.setTypeface(tf); }
+    }
+
     void refreshAll(final boolean loud) {
         if (loud) Toast.makeText(this, "در حال به‌روزرسانی…", Toast.LENGTH_SHORT).show();
         new Thread(new Runnable() {
             public void run() {
                 LiveWidget.refreshNow(getApplicationContext());
-                runOnUiThread(new Runnable() { public void run() { fillStatus(); fillLog(); } });
+                runOnUiThread(new Runnable() { public void run() { fillHome(); fillStatus(); fillLog(); if (page == R.id.pg_look) preview(); } });
             }
         }).start();
     }
@@ -179,10 +352,7 @@ public class MainActivity extends Activity {
         for (int i = 0; i < l.size(); i++) {
             boolean off = p.getBoolean("offline_" + i, false);
             String at = p.getString("last_at_" + i, "");
-            String today = "";
-            try { today = new JSONObject(p.getString("last_" + i, "{}")).optString("today_t", ""); } catch (Exception ignored) {}
-            String t = (off ? "✕ " : "✓ ") + l.get(i).name + " — " + (off ? "قطع" : "وصل")
-                    + (at.isEmpty() ? "" : " · " + LiveWidget.fa(at)) + (today.isEmpty() || off ? "" : " · فروش امروز " + today + " تومان");
+            String t = (off ? "✕ " : "✓ ") + l.get(i).name + " — " + (off ? "قطع" : "وصل") + (at.isEmpty() ? "" : " · " + LiveWidget.fa(at));
             box.addView(line(t, off ? "#B03A2E" : "#0F5C4D", true));
         }
     }
@@ -280,35 +450,42 @@ public class MainActivity extends Activity {
     }
 
     // ───── هشدارها ─────
-    void styleSwitch(int id, String key) {
-        Switch sw = (Switch) findViewById(id);
+    void tint(Switch sw) {
         int[][] st = {{android.R.attr.state_checked}, {}};
         sw.setThumbTintList(new ColorStateList(st, new int[]{Color.parseColor("#E3A12F"), Color.parseColor("#FFFFFF")}));
         sw.setTrackTintList(new ColorStateList(st, new int[]{Color.parseColor("#F2C46B"), Color.parseColor("#B9C2BE")}));
-        sw.setChecked(p.getBoolean(key, true));
-        if (id == R.id.al_tables) sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton b, boolean v) { findViewById(R.id.min_row).setAlpha(v ? 1f : 0.4f); }
-        });
-        if (id == R.id.al_tables) findViewById(R.id.min_row).setAlpha(sw.isChecked() ? 1f : 0.4f);
     }
 
-    void saveAlerts() {
-        int m = 60;
-        try {
-            String s = ((EditText) findViewById(R.id.al_min)).getText().toString().trim();
-            StringBuilder en = new StringBuilder();
-            for (char c : s.toCharArray()) en.append(c >= '۰' && c <= '۹' ? (char) ('0' + (c - '۰')) : c);
-            m = Math.max(5, Integer.parseInt(en.toString()));
-        } catch (Exception ignored) {}
-        p.edit().putBoolean("al_tables", ((Switch) findViewById(R.id.al_tables)).isChecked())
-                .putBoolean("al_watch", ((Switch) findViewById(R.id.al_watch)).isChecked())
-                .putBoolean("al_taraz", ((Switch) findViewById(R.id.al_taraz)).isChecked())
-                .putBoolean("al_sum", ((Switch) findViewById(R.id.al_sum)).isChecked())
-                .putInt("al_min", m).apply();
-        ((EditText) findViewById(R.id.al_min)).setText(LiveWidget.fa(String.valueOf(m)));
-        show((TextView) findViewById(R.id.al_res), "✓ تنظیمات هشدار ذخیره شد.", 1);
-        if (!notifOk()) askNotif();
-        refreshAll(false);
+    void twoLine(Switch sw, String title, String sub) {
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(title);
+        int s0 = sb.length(); sb.append("\n").append(sub);
+        sb.setSpan(new android.text.style.RelativeSizeSpan(0.8f), s0, sb.length(), 0);
+        sb.setSpan(new android.text.style.ForegroundColorSpan(Color.parseColor("#7A8A83")), s0, sb.length(), 0);
+        sw.setText(sb);
+        sw.setLineSpacing(dp(2), 1f);
+    }
+
+    void alertSwitch(final int id, final String key, String title, String sub) {
+        Switch sw = (Switch) findViewById(id);
+        tint(sw); twoLine(sw, title, sub);
+        sw.setChecked(p.getBoolean(key, true));
+        if (id == R.id.al_tables) findViewById(R.id.min_row).setAlpha(sw.isChecked() ? 1f : 0.4f);
+        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton b, boolean v) {
+                p.edit().putBoolean(key, v).apply();
+                if (id == R.id.al_tables) findViewById(R.id.min_row).setAlpha(v ? 1f : 0.4f);
+                if (v && !notifOk()) askNotif();
+            }
+        });
+    }
+
+    static int parseNum(String s) {
+        StringBuilder en = new StringBuilder();
+        for (char c : s.trim().toCharArray()) {
+            if (c >= '۰' && c <= '۹') en.append((char) ('0' + (c - '۰')));
+            else if (c >= '0' && c <= '9') en.append(c);
+        }
+        try { return Integer.parseInt(en.toString()); } catch (Exception e) { return -1; }
     }
 
     boolean notifOk() {
@@ -339,14 +516,49 @@ public class MainActivity extends Activity {
         box.removeAllViews();
         JSONArray a;
         try { a = new JSONArray(p.getString("log", "[]")); } catch (Exception e) { a = new JSONArray(); }
-        if (a.length() == 0) { box.addView(line("هنوز هشداری نیامده.", "#93A099", false)); return; }
-        for (int i = a.length() - 1; i >= 0 && i >= a.length() - 8; i--) {
+        if (a.length() == 0) { TextView t = line("هنوز هشداری نیامده.", "#93A099", false); t.setPadding(dp(16), dp(14), dp(16), dp(14)); box.addView(t); return; }
+        for (int i = a.length() - 1; i >= 0 && i >= a.length() - 20; i--) {
             JSONObject o = a.optJSONObject(i);
             if (o == null) continue;
-            TextView t = line(LiveWidget.fa(o.optString("t")) + " · " + o.optString("title"), "#1D2B27", true);
-            TextView d = line(o.optString("text"), "#5B6A64", false); d.setTextSize(13); d.setPadding(0, 0, 0, dp(6));
-            box.addView(t); box.addView(d);
+            if (box.getChildCount() > 0) {
+                View d = new View(this); d.setBackgroundColor(Color.parseColor("#F0ECE4"));
+                box.addView(d, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+            }
+            box.addView(alertRow(o));
         }
+    }
+
+    /** یک ردیف هشدار: نقطه‌ی رنگی، عنوان و متن، ساعت سمت چپ */
+    View alertRow(JSONObject o) {
+        String k = o.optString("k", ""), title = o.optString("title", "");
+        int dot;
+        if ("summary".equals(k) || title.contains("خلاصه")) dot = Color.parseColor("#0F5C4D");
+        else if ("tbl".equals(k) || title.contains("میز بیش")) dot = Color.parseColor("#B03A2E");
+        else if (k.isEmpty() && title.contains("آزمایشی")) dot = Color.parseColor("#93A099");
+        else dot = Color.parseColor("#E3A12F");
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        r.setPadding(dp(16), dp(12), dp(16), dp(12));
+        View d = new View(this);
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setShape(android.graphics.drawable.GradientDrawable.OVAL); g.setColor(dot); d.setBackground(g);
+        LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(dp(10), dp(10)); dl.topMargin = dp(8);
+        r.addView(d, dl);
+        LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
+        int dash = title.indexOf(" — ");
+        String head = dash > 0 && Sites.all(this).size() <= 1 ? title.substring(dash + 3) : title;
+        TextView h = line(head, "#1D2B27", true); h.setTextSize(15); h.setPadding(0, 0, 0, dp(2));
+        TextView x = line(o.optString("text"), "#6B7A74", false); x.setTextSize(13); x.setPadding(0, 0, 0, 0); x.setLineSpacing(dp(2), 1f);
+        col.addView(h); col.addView(x);
+        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        cl.setMarginStart(dp(12)); r.addView(col, cl);
+        String t = o.optString("t", "");
+        String today = new java.text.SimpleDateFormat("MM/dd", java.util.Locale.US).format(new java.util.Date());
+        String tm = t.startsWith(today + " ") ? t.substring(t.indexOf(' ') + 1) : t;
+        TextView tv = line(LiveWidget.fa(tm), "#9AA6A1", false); tv.setTextSize(12); tv.setPadding(0, dp(2), 0, 0);
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tl.setMarginStart(dp(10)); r.addView(tv, tl);
+        return r;
     }
 
     // ───── به‌روزرسانی از خود داشبورد (‎/static/app/version.json و radres.apk) ─────
@@ -365,10 +577,11 @@ public class MainActivity extends Activity {
         } catch (Exception e) { return ""; }
     }
 
-    String newApk = null; int newCode = 0;
+    String newApk = null, newName = ""; int newCode = 0;
 
     void setupUpdate() {
-        ((TextView) findViewById(R.id.ver)).setText("نسخه‌ی فعلی: " + LiveWidget.fa(myName()));
+        ((TextView) findViewById(R.id.ver)).setText("رادرس · نسخه‌ی " + LiveWidget.fa(myName()));
+        ((TextView) findViewById(R.id.ver2)).setText("نسخه‌ی نصب‌شده: " + LiveWidget.fa(myName()));
         final TextView btn = (TextView) findViewById(R.id.upd);
         btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -382,7 +595,7 @@ public class MainActivity extends Activity {
         final TextView r = (TextView) findViewById(R.id.updres);
         final TextView btn = (TextView) findViewById(R.id.upd);
         final String b = base();
-        if (b.isEmpty()) { if (loud) show(r, "اول یک مجموعه در کادر «مجموعه‌ها» اضافه کنید.", -1); return; }
+        if (b.isEmpty()) { if (loud) show(r, "اول یک مجموعه در «مجموعه‌ها» اضافه کنید.", -1); return; }
         if (loud) show(r, "در حال بررسی…", 0);
         new Thread(new Runnable() {
             public void run() {
@@ -395,7 +608,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         public void run() {
                             if (code > myCode()) {
-                                newApk = apk; newCode = code;
+                                newApk = apk; newCode = code; newName = name; fillMenu();
                                 btn.setBackgroundResource(R.drawable.btn_primary);
                                 btn.setTextColor(Color.parseColor("#2A1C00"));
                                 btn.setText("دانلود و نصب نسخه‌ی " + LiveWidget.fa(name));
@@ -490,34 +703,94 @@ public class MainActivity extends Activity {
         else { res.setBackgroundResource(R.drawable.field); res.setTextColor(Color.parseColor("#5B6A64")); }
     }
 
-    // ───── فونت ویجت ─────
+    // ───── ظاهر ویجت ─────
+    static final String SAMPLE = "۲۵۵٬۱۵۰٬۴۰۷";
+
+    Typeface fontTf(String key, boolean b) {
+        if ("system".equals(key)) return b ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT;
+        Typeface t = Fonts.get(this, key, b);
+        return t == null ? Typeface.DEFAULT : t;
+    }
+
     void fillFonts() {
-        RadioGroup g = (RadioGroup) findViewById(R.id.fonts);
-        g.setOnCheckedChangeListener(null);
-        g.removeAllViews();
         String cur = Fonts.current(this);
+        String nm = "";
+        for (String[] f : Fonts.LIST) if (f[0].equals(cur)) nm = f[1];
+        TextView c = (TextView) findViewById(R.id.font_cur);
+        c.setText(nm + "   " + "۲۵۵٬۱۵۰");
+        c.setTypeface(fontTf(cur, false));
+        LinearLayout box = (LinearLayout) findViewById(R.id.font_list);
+        box.removeAllViews();
         for (int i = 0; i < Fonts.LIST.length; i++) {
-            String[] f = Fonts.LIST[i];
-            RadioButton r = new RadioButton(this);
-            r.setId(5000 + i);
-            r.setText(f[1] + "  —  ۱۵۴٬۹۴۶٬۹۲۴ تومان");
-            r.setTextSize(16); r.setTextColor(Color.parseColor("#1D2B27"));
-            r.setButtonTintList(ColorStateList.valueOf(Color.parseColor("#E3A12F")));
-            r.setPadding(dp(4), dp(10), dp(4), dp(10));
-            Typeface tf = Fonts.get(this, f[0], false);
-            r.setTypeface(tf == null ? Typeface.DEFAULT : tf);
-            g.addView(r, new RadioGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            if (f[0].equals(cur)) r.setChecked(true);
+            final String[] f = Fonts.LIST[i];
+            boolean on = f[0].equals(cur);
+            View d = new View(this); d.setBackgroundColor(Color.parseColor("#F0ECE4"));
+            box.addView(d, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+            LinearLayout r = new LinearLayout(this);
+            r.setOrientation(LinearLayout.HORIZONTAL); r.setGravity(Gravity.CENTER_VERTICAL);
+            r.setPadding(dp(16), dp(11), dp(16), dp(11));
+            r.setBackgroundResource(on ? R.drawable.rowon : R.drawable.rowsel); r.setClickable(true);
+            TextView rd = new TextView(this);
+            rd.setText(on ? "◉" : "○"); rd.setTextSize(18); rd.setTextColor(Color.parseColor(on ? "#E3A12F" : "#B9C2BE"));
+            r.addView(rd);
+            TextView n = new TextView(this);
+            n.setText(f[1]); n.setTextSize(15); n.setTextColor(Color.parseColor("#1D2B27")); n.setTypeface(fontTf(f[0], on));
+            LinearLayout.LayoutParams nl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+            nl.setMarginStart(dp(12)); r.addView(n, nl);
+            TextView sm = new TextView(this);
+            sm.setText(SAMPLE); sm.setTextSize(19); sm.setTextColor(Color.parseColor("#0B3F36")); sm.setTypeface(fontTf(f[0], false));
+            r.addView(sm);
+            r.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    p.edit().putString("font", f[0]).apply();
+                    fillFonts(); setFontList(false); fillMenu(); preview(); renderWidget();
+                }
+            });
+            box.addView(r);
         }
-        g.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            public void onCheckedChanged(RadioGroup gr, int id) {
-                int i = id - 5000;
-                if (i < 0 || i >= Fonts.LIST.length) return;
-                p.edit().putString("font", Fonts.LIST[i][0]).apply();
-                Toast.makeText(MainActivity.this, "فونت «" + Fonts.LIST[i][1] + "» روی ویجت گذاشته شد", Toast.LENGTH_SHORT).show();
-                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
+    }
+
+    void setFontList(boolean open) {
+        findViewById(R.id.font_list).setVisibility(open ? View.VISIBLE : View.GONE);
+        findViewById(R.id.font_box).setBackgroundResource(open ? R.drawable.dd_open : R.drawable.grp);
+        ((TextView) findViewById(R.id.font_arrow)).setText(open ? "▴" : "▾");
+    }
+
+    void fillSeg() {
+        boolean ref = "refresh".equals(p.getString("tap", "open"));
+        TextView a = (TextView) findViewById(R.id.tapOpen), b = (TextView) findViewById(R.id.tapRefresh);
+        for (TextView t : new TextView[]{a, b}) {
+            boolean on = (t == b) == ref;
+            t.setBackgroundResource(on ? R.drawable.seg_on : 0);
+            t.setTextColor(Color.parseColor(on ? "#0B3F36" : "#55625D"));
+            t.setTypeface(on ? bold : reg);
+        }
+    }
+
+    /** پیش‌نمایش زنده: همان تصویری که روی ویجت کشیده می‌شود */
+    void preview() {
+        final android.widget.ImageView iv = (android.widget.ImageView) findViewById(R.id.preview);
+        iv.post(new Runnable() {
+            public void run() {
+                int W = iv.getWidth(), H = iv.getHeight();
+                if (W <= 0 || H <= 0) return;
+                List<Sites.Site> l = Sites.all(MainActivity.this);
+                String name = l.isEmpty() ? "هفت‌خوان" : l.get(0).name;
+                JSONObject x = null;
+                try { x = new JSONObject(p.getString("last_0", "")); } catch (Exception ignored) {}
+                if (x == null) try {
+                    x = new JSONObject("{\"today\":255150407,\"today_t\":\"۲۵۵٬۱۵۰٬۴۰۷\",\"orders_t\":\"۹۷\",\"pct\":-11,\"lw_full\":288000000,\"open\":[]}");
+                } catch (Exception ignored) {}
+                float d = getResources().getDisplayMetrics().density;
+                String font = Fonts.current(MainActivity.this);
+                boolean hidden = p.getBoolean("privacy", false);
+                iv.setImageBitmap(MainCard.draw(MainActivity.this, font, name, x, false, p.getString("last_at_0", ""), hidden, W, H, d));
             }
         });
+    }
+
+    void renderWidget() {
+        new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
     }
 
     void applyFont(View v) {
