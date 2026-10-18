@@ -557,7 +557,7 @@ public class MainActivity extends Activity {
             ul.setTextDirection(View.TEXT_DIRECTION_LTR); ul.setSingleLine(true); ul.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
             col.addView(nm); col.addView(ul);
             row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            row.addView(chip("ویرایش", R.color.c_acc, new View.OnClickListener() { public void onClick(View v) { openForm(idx); } }));
+            row.addView(chip("ویرایش", "#0F5C4D", new View.OnClickListener() { public void onClick(View v) { openForm(idx); } }));
             row.addView(chip("حذف", "#B03A2E", new View.OnClickListener() { public void onClick(View v) {
                 new AlertDialog.Builder(MainActivity.this).setMessage("«" + l.get(idx).name + "» حذف شود؟")
                         .setPositiveButton("حذف", new DialogInterface.OnClickListener() { public void onClick(DialogInterface d, int w) {
