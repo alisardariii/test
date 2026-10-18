@@ -99,28 +99,10 @@ public class MainActivity extends Activity {
             public void onClick(View v) { go(R.id.pg_alerts); }
         });
 
-        icon((TextView) findViewById(R.id.refresh_now), R.drawable.ic_refresh, 0xFF1A1405);
-        icon((TextView) findViewById(R.id.hero_open), R.drawable.ic_ext, Color.WHITE);
 
         // مجموعه‌ها
         findViewById(R.id.add_site).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { openForm(-1); }
-        });
-        findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { closeForm(); }
-        });
-        findViewById(R.id.paste).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData c = cm == null ? null : cm.getPrimaryClip();
-                if (c != null && c.getItemCount() > 0) {
-                    CharSequence t = c.getItemAt(0).coerceToText(MainActivity.this);
-                    if (t != null) ((EditText) findViewById(R.id.url)).setText(t.toString().trim());
-                }
-            }
-        });
-        findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { saveSite(); }
+            public void onClick(View v) { siteSheet(-1); }
         });
         fillSites();
 
@@ -180,7 +162,38 @@ public class MainActivity extends Activity {
         fillFonts();
         fillMenu();
         refreshAll(false);
-        if (b != null) go(b.getInt("page", R.id.pg_home));
+        int startPage = b != null ? b.getInt("page", R.id.pg_home) : getIntent().getIntExtra("page", R.id.pg_home);
+        if (startPage != R.id.pg_home) { pageNoAnim = true; go(startPage); pageNoAnim = false; }
+        else if (b == null && !getIntent().hasExtra("page")) enterAnim();
+        pressAll(findViewById(R.id.page));
+    }
+
+    boolean pageNoAnim = false;
+
+    /** کارت‌های صفحه‌ی اصلی پشت سر هم کمی بالا می‌آیند و پیدا می‌شوند */
+    void enterAnim() {
+        ViewGroup c = (ViewGroup) ((ViewGroup) findViewById(R.id.pg_home)).getChildAt(0);
+        for (int i = 0; i < c.getChildCount(); i++) {
+            View v = c.getChildAt(i);
+            v.setAlpha(0f); v.setTranslationY(dp(14));
+            v.animate().alpha(1f).translationY(0).setStartDelay(30L * i).setDuration(320)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(2f)).start();
+        }
+    }
+
+    /** دکمه‌ها با لمس کمی کوچک می‌شوند و نرم برمی‌گردند */
+    void pressAll(View v) {
+        if (v instanceof android.widget.ScrollView || v instanceof android.widget.SeekBar || v instanceof Switch || v instanceof EditText) {
+            if (v instanceof ViewGroup) for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++) pressAll(((ViewGroup) v).getChildAt(i));
+            return;
+        }
+        if (v.isClickable()) press(v);
+        if (v instanceof ViewGroup) { ViewGroup g = (ViewGroup) v; for (int i = 0; i < g.getChildCount(); i++) pressAll(g.getChildAt(i)); }
+    }
+
+    void press(View v) {
+        boolean wide = v.getLayoutParams() != null && v.getLayoutParams().width == ViewGroup.LayoutParams.MATCH_PARENT && !(v instanceof TextView);
+        v.setStateListAnimator(android.animation.AnimatorInflater.loadStateListAnimator(this, wide ? R.animator.press_row : R.animator.press));
     }
 
     @Override protected void onSaveInstanceState(Bundle o) { super.onSaveInstanceState(o); o.putInt("page", page); }
@@ -218,7 +231,10 @@ public class MainActivity extends Activity {
                 public void onClick(View v) {
                     if (key.equals(p.getString("theme", "auto"))) return;
                     p.edit().putString("theme", key).commit();
-                    recreate();
+                    Intent i = new Intent(MainActivity.this, MainActivity.class).putExtra("page", page);
+                    startActivity(i);
+                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                    finish();
                 }
             });
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
@@ -292,11 +308,26 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override protected void onResume() { super.onResume(); permState(); fillHome(); fillStatus(); fillLog(); fillMenu(); if (page == R.id.pg_guide) fillGuide(); }
+    @Override protected void onResume() { super.onResume(); permState(); fillHome(); fillLog(); fillMenu(); if (page == R.id.pg_guide) fillGuide(); }
 
     // ───── جابه‌جایی بین صفحه‌ها ─────
     void go(int id) {
-        for (int x : PAGES) findViewById(x).setVisibility(x == id ? View.VISIBLE : View.GONE);
+        final View from = findViewById(page), to = findViewById(id);
+        if (pageNoAnim || id == page) {
+            for (int x : PAGES) findViewById(x).setVisibility(x == id ? View.VISIBLE : View.GONE);
+        } else {
+            boolean fwd = id != R.id.pg_home;                       // جلو: زیرصفحه از چپ می‌آید (راست‌به‌چپ)
+            float w = getWindow().getDecorView().getWidth();
+            android.view.animation.Interpolator in = new android.view.animation.DecelerateInterpolator(2.2f);
+            for (int x : PAGES) if (x != id && x != page) findViewById(x).setVisibility(View.GONE);
+            to.setVisibility(View.VISIBLE);
+            to.setAlpha(0f); to.setTranslationX(fwd ? -w * 0.22f : w * 0.10f);
+            to.animate().alpha(1f).translationX(0).setDuration(260).setInterpolator(in).start();
+            from.animate().alpha(0f).translationX(fwd ? w * 0.10f : -w * 0.22f).setDuration(200).setInterpolator(in)
+                    .withEndAction(new Runnable() { public void run() {
+                        from.setVisibility(View.GONE); from.setAlpha(1f); from.setTranslationX(0);
+                    } }).start();
+        }
         if (id == R.id.pg_look) { setFontList(false); preview(); }
         if (id == R.id.pg_alerts) { p.edit().putInt("log_seen", p.getInt("log_total", 0)).apply(); }
         if (id == R.id.pg_guide) fillGuide();
@@ -316,19 +347,29 @@ public class MainActivity extends Activity {
     }
 
     void headers(View v) {
-        if (v instanceof TextView && "hdr".equals(v.getTag())) {
-            TextView t = (TextView) v;
-            t.setTag("b");
-            t.setTextColor(col(R.color.c_head)); t.setTextSize(21);
-            android.graphics.drawable.Drawable bk = getDrawable(R.drawable.ic_back).mutate();
-            bk.setTint(col(R.color.c_head)); bk.setBounds(0, 0, dp(24), dp(24));
-            t.setCompoundDrawablesRelative(bk, null, null, null); t.setCompoundDrawablePadding(dp(10));
-            t.setPadding(dp(4), dp(22), dp(4), dp(16));
-            t.setClickable(true);
-            t.setOnClickListener(new View.OnClickListener() { public void onClick(View x) { go(R.id.pg_home); } });
-            return;
+        if (!(v instanceof ViewGroup)) return;
+        ViewGroup g = (ViewGroup) v;
+        for (int i = 0; i < g.getChildCount(); i++) {
+            View c = g.getChildAt(i);
+            if (c instanceof TextView && "hdr".equals(c.getTag())) {
+                CharSequence title = ((TextView) c).getText();
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(dp(2), dp(20), dp(2), dp(14));
+                android.widget.ImageView bk = new android.widget.ImageView(this);
+                bk.setImageResource(R.drawable.ic_arrow); bk.setColorFilter(col(R.color.c_head));
+                bk.setBackgroundResource(R.drawable.bk_bg); bk.setPadding(dp(11), dp(11), dp(11), dp(11));
+                bk.setElevation(dp(2)); bk.setClickable(true); bk.setContentDescription("برگشت");
+                bk.setOnClickListener(new View.OnClickListener() { public void onClick(View x) { go(R.id.pg_home); } });
+                row.addView(bk, new LinearLayout.LayoutParams(dp(42), dp(42)));
+                TextView t = new TextView(this);
+                t.setText(title); t.setTag("b"); t.setTextColor(col(R.color.c_head)); t.setTextSize(22);
+                LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                tl.setMarginStart(dp(12)); row.addView(t, tl);
+                g.removeViewAt(i);
+                g.addView(row, i, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            } else headers(c);
         }
-        if (v instanceof ViewGroup) { ViewGroup g = (ViewGroup) v; for (int i = 0; i < g.getChildCount(); i++) headers(g.getChildAt(i)); }
     }
 
     // ───── منوی تنظیمات ─────
@@ -342,6 +383,7 @@ public class MainActivity extends Activity {
         menuRow(m, R.drawable.ic_widget, "ظاهر", null, null, R.id.pg_look);
         updRow(m);
         menuRow(m, R.drawable.ic_help, "راه‌اندازی ویجت", null, guideDone() < 4 ? "dot" : null, R.id.pg_guide);
+        pressAll(m);
     }
 
     String vname(String v) { return LiveWidget.fa(v).replace('.', '٫'); }
@@ -436,10 +478,39 @@ public class MainActivity extends Activity {
             w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
             w.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             w.setGravity(Gravity.BOTTOM);
-            w.setDimAmount(0.35f);
-            w.setWindowAnimations(android.R.style.Animation_InputMethod);
+            w.setDimAmount(0f);
+            w.setWindowAnimations(0);
         }
         sheet.show();
+        pressAll(b);
+        // بالا آمدن فنری و تیره شدن آرام پشت
+        b.setTranslationY(dp(420));
+        b.animate().translationY(0).setDuration(340).setInterpolator(new android.view.animation.OvershootInterpolator(0.7f)).start();
+        final android.view.Window w2 = w;
+        android.animation.ValueAnimator dim = android.animation.ValueAnimator.ofFloat(0f, 0.35f);
+        dim.setDuration(260);
+        dim.addUpdateListener(new android.animation.ValueAnimator.AnimatorUpdateListener() {
+            public void onAnimationUpdate(android.animation.ValueAnimator a) { if (w2 != null) w2.setDimAmount((float) a.getAnimatedValue()); }
+        });
+        dim.start();
+        sheetView = b;
+    }
+
+    View sheetView;
+
+    void closeSheet() {
+        final android.app.Dialog d = sheet;
+        if (d == null || !d.isShowing() || sheetView == null) { if (d != null) d.dismiss(); return; }
+        final android.view.Window w = d.getWindow();
+        android.animation.ValueAnimator dim = android.animation.ValueAnimator.ofFloat(0.35f, 0f);
+        dim.setDuration(200);
+        dim.addUpdateListener(new android.animation.ValueAnimator.AnimatorUpdateListener() {
+            public void onAnimationUpdate(android.animation.ValueAnimator a) { if (w != null) w.setDimAmount((float) a.getAnimatedValue()); }
+        });
+        dim.start();
+        sheetView.animate().translationY(sheetView.getHeight()).setDuration(200)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f))
+                .withEndAction(new Runnable() { public void run() { d.dismiss(); } }).start();
     }
 
     android.widget.ImageView rocket(int size) {
@@ -460,7 +531,7 @@ public class MainActivity extends Activity {
         t.setText(s); t.setTextSize(16); t.setTypeface(bold); t.setGravity(Gravity.CENTER);
         t.setTextColor(gold ? 0xFF1A1405 : Color.WHITE);
         t.setBackgroundResource(gold ? R.drawable.hero_btn2 : R.drawable.btn_green);
-        t.setClickable(true); t.setOnClickListener(l);
+        t.setClickable(true); if (l != null) t.setOnClickListener(l);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)); lp.topMargin = dp(22);
         t.setLayoutParams(lp);
         return t;
@@ -472,7 +543,7 @@ public class MainActivity extends Activity {
         b.addView(sheetText("شما به‌روز هستید", 19, true, col(R.color.c_head)));
         TextView s2 = sheetText("از آخرین نسخه‌ی رادرس (" + vname(myName()) + ") استفاده می‌کنید", 14, false, col(R.color.c_mut));
         s2.setPadding(0, dp(6), 0, 0); b.addView(s2);
-        b.addView(bigBtn("متوجه شدم", false, new View.OnClickListener() { public void onClick(View v) { sheet.dismiss(); } }));
+        b.addView(bigBtn("متوجه شدم", false, new View.OnClickListener() { public void onClick(View v) { closeSheet(); } }));
         showSheet(b);
     }
 
@@ -500,7 +571,7 @@ public class MainActivity extends Activity {
         b.addView(bigBtn("به‌روزرسانی", true, new View.OnClickListener() { public void onClick(View v) { download(); } }));
         TextView later = sheetText("بعداً", 14, false, col(R.color.c_mut));
         later.setPadding(0, dp(14), 0, dp(4)); later.setClickable(true);
-        later.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { sheet.dismiss(); } });
+        later.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { closeSheet(); } });
         b.addView(later);
         showSheet(b);
     }
@@ -563,7 +634,7 @@ public class MainActivity extends Activity {
         List<Sites.Site> l = Sites.all(this);
         TextView nm = (TextView) findViewById(R.id.hero_name), st = (TextView) findViewById(R.id.hero_state),
                 am = (TextView) findViewById(R.id.hero_amt), sub = (TextView) findViewById(R.id.hero_sub),
-                op = (TextView) findViewById(R.id.hero_open);
+                op = (TextView) findViewById(R.id.hero_open_t);
         if (l.isEmpty()) {
             nm.setText("هنوز مجموعه‌ای اضافه نشده"); st.setVisibility(View.GONE);
             am.setText("—"); sub.setText("برای شروع، یک مجموعه اضافه کنید."); sub.setTextColor(Color.parseColor("#CFE3DA"));
@@ -580,11 +651,10 @@ public class MainActivity extends Activity {
             try { x = new JSONObject(p.getString("last_0", "")); } catch (Exception ignored) {}
             if (x == null) { am.setText("—"); sub.setText("هنوز اطلاعاتی نیامده؛ «تازه کن» را بزنید."); sub.setTextColor(Color.parseColor("#CFE3DA")); }
             else {
-                android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(x.optString("today_t", "—"));
-                int s0 = sb.length(); sb.append("  تومان");
-                sb.setSpan(new android.text.style.RelativeSizeSpan(0.45f), s0, sb.length(), 0);
-                sb.setSpan(new CustomFont(reg), s0, sb.length(), 0);
-                am.setText(sb);
+                long nowAmt = Math.round(x.optDouble("today", 0));
+                if (nowAmt > 0 && nowAmt != shownAmt) countUp(am, shownAmt > 0 ? shownAmt : Math.round(nowAmt * 0.92), nowAmt);
+                else if (nowAmt <= 0) am.setText(amtText(x.optString("today_t", "—")));
+                shownAmt = nowAmt;
                 StringBuilder s = new StringBuilder();
                 int col = Color.parseColor("#CFE3DA");
                 if (!x.isNull("pct")) {
@@ -623,6 +693,33 @@ public class MainActivity extends Activity {
         ((TextView) findViewById(R.id.row_log_t)).setText("همه‌ی هشدارها");
     }
 
+    long shownAmt = 0;
+    android.animation.ValueAnimator amtAnim;
+
+    CharSequence amtText(String t) {
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(t);
+        int s0 = sb.length(); sb.append("  تومان");
+        sb.setSpan(new android.text.style.RelativeSizeSpan(0.45f), s0, sb.length(), 0);
+        sb.setSpan(new CustomFont(reg), s0, sb.length(), 0);
+        return sb;
+    }
+
+    /** مبلغ از مقدار قبلی تا مقدار تازه شمرده می‌شود */
+    void countUp(final TextView am, long from, final long to) {
+        if (amtAnim != null) amtAnim.cancel();
+        amtAnim = android.animation.ValueAnimator.ofFloat(0f, 1f);
+        final long f0 = from;
+        amtAnim.setDuration(700);
+        amtAnim.setInterpolator(new android.view.animation.DecelerateInterpolator(2f));
+        amtAnim.addUpdateListener(new android.animation.ValueAnimator.AnimatorUpdateListener() {
+            public void onAnimationUpdate(android.animation.ValueAnimator a) {
+                long v = f0 + Math.round((to - f0) * (float) a.getAnimatedValue());
+                am.setText(amtText(LiveWidget.sep(v)));
+            }
+        });
+        amtAnim.start();
+    }
+
     static class CustomFont extends android.text.style.MetricAffectingSpan {
         final Typeface tf;
         CustomFont(Typeface t) { tf = t; }
@@ -630,27 +727,31 @@ public class MainActivity extends Activity {
         @Override public void updateMeasureState(android.text.TextPaint tp) { tp.setTypeface(tf); }
     }
 
+    android.animation.ObjectAnimator spin;
+
     void refreshAll(final boolean loud) {
-        if (loud) Toast.makeText(this, "در حال به‌روزرسانی…", Toast.LENGTH_SHORT).show();
+        final View ic = findViewById(R.id.refresh_ic);
+        if (loud && spin == null) {
+            spin = android.animation.ObjectAnimator.ofFloat(ic, "rotation", 0f, 360f);
+            spin.setDuration(750); spin.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            spin.setInterpolator(new android.view.animation.LinearInterpolator());
+            spin.start();
+        }
         new Thread(new Runnable() {
             public void run() {
                 LiveWidget.refreshNow(getApplicationContext());
-                runOnUiThread(new Runnable() { public void run() { fillHome(); fillStatus(); fillLog(); if (page == R.id.pg_look) preview(); } });
+                runOnUiThread(new Runnable() { public void run() {
+                    if (spin != null) {
+                        spin.setRepeatCount(0);   // دور فعلی را تمام کند و بایستد
+                        spin.addListener(new android.animation.AnimatorListenerAdapter() {
+                            public void onAnimationEnd(android.animation.Animator a) { ic.setRotation(0); }
+                        });
+                        spin = null;
+                    }
+                    fillHome(); fillSites(); fillLog(); if (page == R.id.pg_look) preview();
+                } });
             }
         }).start();
-    }
-
-    void fillStatus() {
-        LinearLayout box = (LinearLayout) findViewById(R.id.status_list);
-        box.removeAllViews();
-        List<Sites.Site> l = Sites.all(this);
-        if (l.isEmpty()) { box.addView(line("هنوز مجموعه‌ای اضافه نشده.", R.color.c_hint, false)); return; }
-        for (int i = 0; i < l.size(); i++) {
-            boolean off = p.getBoolean("offline_" + i, false);
-            String at = p.getString("last_at_" + i, "");
-            String t = (off ? "✕ " : "✓ ") + l.get(i).name + " — " + (off ? "قطع" : "وصل") + (at.isEmpty() ? "" : " · " + LiveWidget.fa(at));
-            box.addView(line(t, off ? "#B03A2E" : "#0F5C4D", true));
-        }
     }
 
     TextView line(String s, String color, boolean b) {
@@ -668,80 +769,227 @@ public class MainActivity extends Activity {
         return t;
     }
 
-    // ───── مجموعه‌ها ─────
-    void openForm(int idx) {
-        editing = idx;
-        List<Sites.Site> l = Sites.all(this);
-        boolean ed = idx >= 0 && idx < l.size();
-        ((TextView) findViewById(R.id.form_title)).setText(ed ? "ویرایش «" + l.get(idx).name + "»" : "مجموعه‌ی جدید");
-        ((EditText) findViewById(R.id.name)).setText(ed ? l.get(idx).name : "");
-        ((EditText) findViewById(R.id.url)).setText(ed ? l.get(idx).url : "");
-        findViewById(R.id.result).setVisibility(View.GONE);
-        findViewById(R.id.form).setVisibility(View.VISIBLE);
-        findViewById(R.id.add_site).setVisibility(View.GONE);
-    }
-
-    void closeForm() {
-        editing = -1;
-        findViewById(R.id.form).setVisibility(View.GONE);
-        findViewById(R.id.add_site).setVisibility(View.VISIBLE);
-    }
-
-    void saveSite() {
-        final TextView res = (TextView) findViewById(R.id.result);
-        final String n = ((EditText) findViewById(R.id.name)).getText().toString().trim();
-        final String u = ((EditText) findViewById(R.id.url)).getText().toString().trim();
-        if (u.isEmpty()) { show(res, "لینک را وارد کنید.", -1); return; }
-        show(res, "در حال امتحان لینک…", 0);
-        new Thread(new Runnable() {
-            public void run() {
-                String msg; int st; String nm = n;
-                try {
-                    JSONObject x = new JSONObject(LiveWidget.fetch(Sites.jsonUrl(u)));
-                    if (nm.isEmpty()) nm = x.optString("site_name", "مجموعه");
-                    List<Sites.Site> l = Sites.all(MainActivity.this);
-                    if (editing >= 0 && editing < l.size()) { l.get(editing).name = nm; l.get(editing).url = u; }
-                    else l.add(new Sites.Site(nm, u));
-                    Sites.save(MainActivity.this, l);
-                    msg = "✓ «" + nm + "» ذخیره شد و وصل است."; st = 1;
-                } catch (Exception ex) { msg = "✕ وصل نشد؛ ذخیره نشد. لینک یا اینترنت را چک کنید."; st = -1; }
-                final String m = msg; final int s2 = st;
-                runOnUiThread(new Runnable() { public void run() {
-                    if (s2 > 0) { closeForm(); fillSites(); Toast.makeText(MainActivity.this, m, Toast.LENGTH_LONG).show(); refreshAll(false); }
-                    else show(res, m, s2);
-                } });
-            }
-        }).start();
-    }
+    // ───── مجموعه‌ها: کارت‌ها، منوی ⋮ و پنجره‌ی افزودن ─────
+    static final int[][] AV = {{0xFF2F7D63, 0xFF1C5A49}, {0xFF6B7FD1, 0xFF3D4F9E}, {0xFFD18A4B, 0xFFA0602A}, {0xFF9B6BD1, 0xFF6A3FA0}, {0xFF4BA8C4, 0xFF2A7590}};
 
     void fillSites() {
         LinearLayout box = (LinearLayout) findViewById(R.id.sites_list);
         box.removeAllViews();
         final List<Sites.Site> l = Sites.all(this);
+        findViewById(R.id.sites_note).setVisibility(l.size() > 1 ? View.VISIBLE : View.GONE);
         for (int i = 0; i < l.size(); i++) {
             final int idx = i;
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setBackgroundResource(R.drawable.field); row.setPadding(dp(14), dp(10), dp(10), dp(10));
-            LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            rl.topMargin = dp(8); row.setLayoutParams(rl);
-            LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
-            TextView nm = new TextView(this); nm.setText(l.get(i).name); nm.setTextColor(col(R.color.c_head)); nm.setTextSize(15); nm.setTypeface(bold);
-            TextView ul = new TextView(this); ul.setText(l.get(i).url); ul.setTextColor(col(R.color.c_hint)); ul.setTextSize(11);
-            ul.setTextDirection(View.TEXT_DIRECTION_LTR); ul.setSingleLine(true); ul.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
-            col.addView(nm); col.addView(ul);
-            row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            row.addView(chip("ویرایش", "#0F5C4D", new View.OnClickListener() { public void onClick(View v) { openForm(idx); } }));
-            row.addView(chip("حذف", "#B03A2E", new View.OnClickListener() { public void onClick(View v) {
-                new AlertDialog.Builder(MainActivity.this).setMessage("«" + l.get(idx).name + "» حذف شود؟")
-                        .setPositiveButton("حذف", new DialogInterface.OnClickListener() { public void onClick(DialogInterface d, int w) {
-                            List<Sites.Site> x = Sites.all(MainActivity.this); if (idx < x.size()) x.remove(idx);
-                            Sites.save(MainActivity.this, x); closeForm(); fillSites(); fillStatus(); LiveWidget.render(getApplicationContext());
-                        } }).setNegativeButton("انصراف", null).show();
-            } }));
-            box.addView(row);
+            LinearLayout card = new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL); card.setBackgroundResource(R.drawable.grp); card.setPadding(dp(16), dp(14), dp(10), dp(14));
+            LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (i > 0) cl.topMargin = dp(12);
+            LinearLayout top = new LinearLayout(this); top.setOrientation(LinearLayout.HORIZONTAL); top.setGravity(Gravity.CENTER_VERTICAL);
+            String nm = l.get(i).name == null || l.get(i).name.isEmpty() ? "مجموعه" : l.get(i).name;
+            TextView av = new TextView(this);
+            av.setText(nm.substring(0, 1)); av.setGravity(Gravity.CENTER); av.setTextSize(19); av.setTypeface(bold); av.setTextColor(Color.WHITE);
+            android.graphics.drawable.GradientDrawable ag = new android.graphics.drawable.GradientDrawable(
+                    android.graphics.drawable.GradientDrawable.Orientation.TL_BR, AV[i % AV.length]);
+            ag.setCornerRadius(dp(14)); av.setBackground(ag);
+            top.addView(av, new LinearLayout.LayoutParams(dp(44), dp(44)));
+            LinearLayout tc = new LinearLayout(this); tc.setOrientation(LinearLayout.VERTICAL);
+            android.text.SpannableStringBuilder ns = new android.text.SpannableStringBuilder(nm);
+            if (i == 0 && l.size() > 1) {
+                ns.append("  "); int s0 = ns.length(); ns.append("\u00A0اصلی\u00A0");
+                ns.setSpan(new Pill(0x40F2C46B, night() ? 0xFFF2C46B : 0xFF9A6A12, bold), s0, ns.length(), 0);
+                ns.setSpan(new android.text.style.RelativeSizeSpan(0.72f), s0, ns.length(), 0);
+            }
+            TextView nt = line("", R.color.c_text, true); nt.setText(ns); nt.setTextSize(16.5f); nt.setPadding(0, 0, 0, 0);
+            tc.addView(nt);
+            boolean off = p.getBoolean("offline_" + i, false);
+            String at = p.getString("last_at_" + i, "");
+            boolean never = p.getString("last_" + i, null) == null;
+            android.text.SpannableStringBuilder ss = new android.text.SpannableStringBuilder("●  ");
+            ss.setSpan(new android.text.style.ForegroundColorSpan(never ? col(R.color.c_hint) : off ? Color.parseColor("#B03A2E") : Color.parseColor("#22A06B")), 0, 1, 0);
+            ss.setSpan(new android.text.style.RelativeSizeSpan(0.8f), 0, 1, 0);
+            ss.append(never ? "هنوز اطلاعاتی نیامده" : off ? "قطع · آخرین اطلاعات " + LiveWidget.fa(at) : "وصل" + (at.isEmpty() ? "" : " · " + LiveWidget.fa(at)));
+            TextView stt = line("", R.color.c_mut, false); stt.setText(ss); stt.setTextSize(13); stt.setPadding(0, dp(2), 0, 0);
+            tc.addView(stt);
+            LinearLayout.LayoutParams tcl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1); tcl.setMarginStart(dp(12));
+            top.addView(tc, tcl);
+            final android.widget.ImageView more = new android.widget.ImageView(this);
+            more.setImageResource(R.drawable.ic_dots); more.setColorFilter(col(R.color.c_mut));
+            more.setBackgroundResource(R.drawable.bk_bg); more.setPadding(dp(8), dp(8), dp(8), dp(8)); more.setClickable(true);
+            more.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { siteMenu(more, idx); } });
+            top.addView(more, new LinearLayout.LayoutParams(dp(38), dp(38)));
+            card.addView(top);
+            JSONObject x = null;
+            try { x = new JSONObject(p.getString("last_" + i, "")); } catch (Exception ignored) {}
+            if (x != null && !off) {
+                LinearLayout k = new LinearLayout(this); k.setOrientation(LinearLayout.HORIZONTAL); k.setBaselineAligned(false);
+                k.addView(kpi(x.optString("today_t", "—"), "فروش امشب (تومان)"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                LinearLayout.LayoutParams kl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.55f); kl.setMarginStart(dp(10));
+                k.addView(kpi(x.optString("orders_t", "—"), "فیش"), kl);
+                LinearLayout.LayoutParams kk = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                kk.topMargin = dp(14); kk.setMarginEnd(dp(6));
+                card.addView(k, kk);
+            }
+            box.addView(card, cl);
         }
-        findViewById(R.id.add_site).setVisibility(findViewById(R.id.form).getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+        pressAll(box);
+    }
+
+    View kpi(String v, String label) {
+        LinearLayout c = new LinearLayout(this); c.setOrientation(LinearLayout.VERTICAL);
+        c.setBackgroundResource(R.drawable.chip_ok); c.setPadding(dp(12), dp(8), dp(12), dp(8));
+        TextView a = line(v, R.color.c_head, true); a.setTextSize(16); a.setPadding(0, 0, 0, 0);
+        TextView b = line(label, R.color.c_mut, false); b.setTextSize(12); b.setPadding(0, 0, 0, 0);
+        c.addView(a); c.addView(b);
+        return c;
+    }
+
+    void siteMenu(View anchor, final int idx) {
+        final List<Sites.Site> l = Sites.all(this);
+        if (idx >= l.size()) return;
+        LinearLayout m = new LinearLayout(this);
+        m.setOrientation(LinearLayout.VERTICAL); m.setBackgroundResource(R.drawable.menu_bg);
+        m.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        final android.widget.PopupWindow pw = new android.widget.PopupWindow(m, dp(210), ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        pw.setElevation(dp(10));
+        pw.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        pw.setAnimationStyle(android.R.style.Animation_Dialog);
+        menuItem(m, R.drawable.ic_edit, "ویرایش", false, new Runnable() { public void run() { pw.dismiss(); siteSheet(idx); } });
+        if (idx > 0) menuItem(m, R.drawable.ic_star, "اصلی شود", false, new Runnable() { public void run() {
+            pw.dismiss(); Sites.makeMain(MainActivity.this, idx); fillSites(); fillHome(); fillMenu();
+            new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
+        } });
+        menuItem(m, R.drawable.ic_copy, "کپی لینک", false, new Runnable() { public void run() {
+            pw.dismiss();
+            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("link", l.get(idx).url));
+            Toast.makeText(MainActivity.this, "لینک کپی شد", Toast.LENGTH_SHORT).show();
+        } });
+        menuItem(m, R.drawable.ic_trash, "حذف", true, new Runnable() { public void run() {
+            pw.dismiss();
+            new AlertDialog.Builder(MainActivity.this).setMessage("«" + l.get(idx).name + "» حذف شود؟")
+                    .setPositiveButton("حذف", new DialogInterface.OnClickListener() { public void onClick(DialogInterface d, int w) {
+                        Sites.remove(MainActivity.this, idx); fillSites(); fillHome(); fillMenu(); LiveWidget.render(getApplicationContext());
+                    } }).setNegativeButton("انصراف", null).show();
+        } });
+        pw.showAsDropDown(anchor, -dp(170), -dp(4));
+    }
+
+    void menuItem(LinearLayout m, int ico, String t, boolean danger, final Runnable r) {
+        if (m.getChildCount() > 0) { View d = new View(this); d.setBackgroundColor(col(R.color.c_line)); m.addView(d, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1))); }
+        LinearLayout it = new LinearLayout(this); it.setOrientation(LinearLayout.HORIZONTAL); it.setGravity(Gravity.CENTER_VERTICAL);
+        it.setPadding(dp(16), dp(13), dp(16), dp(13)); it.setBackgroundResource(R.drawable.rowsel); it.setClickable(true);
+        it.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { r.run(); } });
+        int c = danger ? col(R.color.c_badfg) : col(R.color.c_acc);
+        android.widget.ImageView iv = new android.widget.ImageView(this); iv.setImageResource(ico); iv.setColorFilter(c);
+        it.addView(iv, new LinearLayout.LayoutParams(dp(19), dp(19)));
+        TextView tv = line(t, danger ? R.color.c_badfg : R.color.c_text, false); tv.setTextSize(15); tv.setPadding(dp(10), 0, 0, 0);
+        it.addView(tv);
+        m.addView(it);
+    }
+
+    // پنجره‌ی افزودن / ویرایش مجموعه
+    boolean linkOk = false; String linkName = ""; int linkGen = 0;
+
+    void siteSheet(final int idx) {
+        final List<Sites.Site> l = Sites.all(this);
+        final boolean ed = idx >= 0 && idx < l.size();
+        LinearLayout b = sheetBox();
+        b.setGravity(Gravity.START);
+        TextView h = line(ed ? "ویرایش «" + l.get(idx).name + "»" : "افزودن مجموعه", R.color.c_head, true); h.setTextSize(19);
+        b.addView(h, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView hint = line("در داشبورد، صفحه‌ی «ویجت» را باز کنید و لینک «داده‌ی خام» را کپی کنید.", R.color.c_mut, false);
+        hint.setTextSize(13); hint.setLineSpacing(dp(3), 1f); b.addView(hint);
+
+        TextView l1 = line("لینک", R.color.c_mut, true); l1.setTextSize(13); l1.setPadding(0, dp(14), 0, dp(6)); b.addView(l1);
+        LinearLayout ur = new LinearLayout(this); ur.setOrientation(LinearLayout.HORIZONTAL); ur.setGravity(Gravity.CENTER_VERTICAL);
+        ur.setBackgroundResource(R.drawable.field); ur.setPadding(dp(12), dp(4), dp(6), dp(4));
+        final EditText url = new EditText(this);
+        url.setBackground(null); url.setTextSize(13); url.setTextColor(col(R.color.c_text)); url.setHintTextColor(col(R.color.c_hint));
+        url.setHint("http://…/w/….json"); url.setSingleLine(true); url.setTextDirection(View.TEXT_DIRECTION_LTR);
+        url.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        url.setTypeface(Typeface.MONOSPACE);
+        ur.addView(url, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout pasteB = new LinearLayout(this); pasteB.setOrientation(LinearLayout.HORIZONTAL); pasteB.setGravity(Gravity.CENTER_VERTICAL);
+        pasteB.setBackgroundResource(R.drawable.btn_small); pasteB.setPadding(dp(10), dp(7), dp(10), dp(7)); pasteB.setClickable(true);
+        android.widget.ImageView pi = new android.widget.ImageView(this); pi.setImageResource(R.drawable.ic_paste); pi.setColorFilter(col(R.color.c_acc));
+        pasteB.addView(pi, new LinearLayout.LayoutParams(dp(16), dp(16)));
+        TextView pt = line("چسباندن", R.color.c_acc, true); pt.setTextSize(13); pt.setPadding(dp(6), 0, 0, 0); pasteB.addView(pt);
+        ur.addView(pasteB);
+        b.addView(ur, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        final TextView msg = line("", R.color.c_mut, false); msg.setTextSize(13.5f); msg.setVisibility(View.GONE);
+        msg.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); ml.topMargin = dp(10);
+        b.addView(msg, ml);
+
+        TextView l2 = line("اسم", R.color.c_mut, true); l2.setTextSize(13); l2.setPadding(0, dp(14), 0, dp(6)); b.addView(l2);
+        final EditText name = new EditText(this);
+        name.setBackgroundResource(R.drawable.field); name.setPadding(dp(14), dp(12), dp(14), dp(12)); name.setTextSize(14);
+        name.setTextColor(col(R.color.c_text)); name.setHintTextColor(col(R.color.c_hint)); name.setHint("از داشبورد خوانده می‌شود");
+        name.setSingleLine(true); name.setTypeface(reg);
+        b.addView(name, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        final TextView save = bigBtn("ذخیره", true, null);
+        b.addView(save);
+
+        final Runnable test = new Runnable() { public void run() {
+            final String u = url.getText().toString().trim();
+            final int gen = ++linkGen; linkOk = false; save.setAlpha(0.45f);
+            if (u.isEmpty()) { msg.setVisibility(View.GONE); return; }
+            siteMsg(msg, "در حال امتحان لینک…", 0);
+            new Thread(new Runnable() { public void run() {
+                String nm = null, amt = "";
+                try {
+                    JSONObject x = new JSONObject(LiveWidget.fetch(Sites.jsonUrl(u)));
+                    nm = x.optString("site_name", "مجموعه");
+                    double td = x.optDouble("today", 0);
+                    amt = td > 0 ? " · فروش امشب " + LiveWidget.fa(String.valueOf(Math.round(td / 1e6))) + " میلیون" : "";
+                } catch (Exception ignored) {}
+                final String fn = nm, fa = amt;
+                runOnUiThread(new Runnable() { public void run() {
+                    if (gen != linkGen) return;
+                    if (fn == null) { siteMsg(msg, "وصل نشد؛ لینک یا اینترنت را چک کنید.", -1); return; }
+                    linkOk = true; linkName = fn; save.setAlpha(1f);
+                    siteMsg(msg, "✓ وصل شد — «" + fn + "»" + fa, 1);
+                    if (name.getText().toString().trim().isEmpty()) name.setText(fn);
+                } });
+            } }).start();
+        } };
+        url.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence c, int a, int b2, int d) {}
+            public void onTextChanged(CharSequence c, int a, int b2, int d) {}
+            public void afterTextChanged(android.text.Editable e) { url.removeCallbacks(test); url.postDelayed(test, 600); }
+        });
+        pasteB.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
+            String c = clip(); if (c.isEmpty()) Toast.makeText(MainActivity.this, "حافظه‌ی گوشی خالی است", Toast.LENGTH_SHORT).show(); else url.setText(c);
+        } });
+        save.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
+            if (!linkOk) { Toast.makeText(MainActivity.this, "اول لینک باید وصل شود", Toast.LENGTH_SHORT).show(); return; }
+            String nm = name.getText().toString().trim(); if (nm.isEmpty()) nm = linkName;
+            List<Sites.Site> x = Sites.all(MainActivity.this);
+            if (ed && idx < x.size()) { x.get(idx).name = nm; x.get(idx).url = url.getText().toString().trim(); }
+            else x.add(new Sites.Site(nm, url.getText().toString().trim()));
+            Sites.save(MainActivity.this, x);
+            closeSheet(); fillSites(); fillHome(); fillMenu(); refreshAll(false);
+            Toast.makeText(MainActivity.this, "«" + nm + "» ذخیره شد", Toast.LENGTH_SHORT).show();
+        } });
+        linkOk = false; save.setAlpha(0.45f);
+        if (ed) { url.setText(l.get(idx).url); name.setText(l.get(idx).name); }
+        else { String c = clip(); if (c.startsWith("http") && c.contains("/w/")) url.setText(c); }
+        showSheet(b);
+        if (sheet.getWindow() != null) sheet.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+    }
+
+    String clip() {
+        try {
+            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData c = cm == null ? null : cm.getPrimaryClip();
+            if (c != null && c.getItemCount() > 0) { CharSequence t = c.getItemAt(0).coerceToText(this); if (t != null) return t.toString().trim(); }
+        } catch (Exception ignored) {}
+        return "";
+    }
+
+    void siteMsg(TextView m, String s, int st) {
+        m.setVisibility(View.VISIBLE); m.setText(s);
+        m.setBackgroundResource(st > 0 ? R.drawable.chip_ok : st < 0 ? R.drawable.chip_bad : R.drawable.field);
+        m.setTextColor(st > 0 ? col(R.color.c_okfg) : st < 0 ? col(R.color.c_badfg) : col(R.color.c_mut));
     }
 
     TextView chip(String text, String color, View.OnClickListener l) {
@@ -859,17 +1107,65 @@ public class MainActivity extends Activity {
             hb.setSpan(new android.text.style.RelativeSizeSpan(0.75f), s0, hb.length(), 0);
             h.setText(hb);
         }
-        TextView x = line(o.optString("text"), R.color.c_mut, false); x.setTextSize(13); x.setPadding(0, 0, 0, 0); x.setLineSpacing(dp(2), 1f);
+        TextView x = line(glue(o.optString("text")), R.color.c_mut, false); x.setTextSize(13); x.setPadding(0, 0, 0, 0); x.setLineSpacing(dp(2), 1f);
         col.addView(h); col.addView(x);
         LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         cl.setMarginStart(dp(12)); r.addView(col, cl);
         String t = o.optString("t", "");
-        String today = new java.text.SimpleDateFormat("MM/dd", java.util.Locale.US).format(new java.util.Date());
-        String tm = t.startsWith(today + " ") ? t.substring(t.indexOf(' ') + 1) : t;
+        String tm = when(t);
         TextView tv = line(LiveWidget.fa(tm), R.color.c_mut, false); tv.setTextSize(12); tv.setPadding(0, dp(2), 0, 0);
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tl.setMarginStart(dp(10)); r.addView(tv, tl);
         return r;
+    }
+
+    /** عدد درصددار به کلمه‌ی قبلش می‌چسبد تا تنها به خط بعد نرود */
+    static String glue(String s) {
+        return s.replaceAll(" ([^ ]*٪)", "\u00A0$1").replaceAll("٪ ", "٪\u00A0");
+    }
+
+    /** «MM/dd HH:mm» → امروز: ساعت؛ دیروز: «دیروز ساعت»؛ تا یک هفته: اسم روز؛ قدیمی‌تر: «۱۸ مهر» */
+    static String when(String t) {
+        try {
+            String[] a = t.split(" ");
+            String[] md = a[0].split("/");
+            java.util.Calendar now = java.util.Calendar.getInstance();
+            java.util.Calendar c = java.util.Calendar.getInstance();
+            c.set(java.util.Calendar.MONTH, Integer.parseInt(md[0]) - 1);
+            c.set(java.util.Calendar.DAY_OF_MONTH, Integer.parseInt(md[1]));
+            if (c.after(now)) c.add(java.util.Calendar.YEAR, -1);
+            long days = (startOfDay(now) - startOfDay(c)) / 86400000L;
+            String hm = a.length > 1 ? LiveWidget.fa(a[1]) : "";
+            if (days <= 0) return hm;
+            if (days == 1) return "دیروز " + hm;
+            if (days < 7) {
+                String[] wd = {"یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"};
+                return wd[c.get(java.util.Calendar.DAY_OF_WEEK) - 1] + " " + hm;
+            }
+            int[] j = jalali(c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH) + 1, c.get(java.util.Calendar.DAY_OF_MONTH));
+            String[] mn = {"فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"};
+            return LiveWidget.fa(String.valueOf(j[2])) + " " + mn[j[1] - 1];
+        } catch (Exception e) { return LiveWidget.fa(t); }
+    }
+
+    static long startOfDay(java.util.Calendar c) {
+        java.util.Calendar x = (java.util.Calendar) c.clone();
+        x.set(java.util.Calendar.HOUR_OF_DAY, 12); x.set(java.util.Calendar.MINUTE, 0); x.set(java.util.Calendar.SECOND, 0); x.set(java.util.Calendar.MILLISECOND, 0);
+        return x.getTimeInMillis();
+    }
+
+    /** میلادی به شمسی */
+    static int[] jalali(int gy, int gm, int gd) {
+        int[] g = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+        int gy2 = gm > 2 ? gy + 1 : gy;
+        long days = 355666 + 365L * gy + (gy2 + 3) / 4 - (gy2 + 99) / 100 + (gy2 + 399) / 400 + gd + g[gm - 1];
+        long jy = -1595 + 33 * (days / 12053); days %= 12053;
+        jy += 4 * (days / 1461); days %= 1461;
+        if (days > 365) { jy += (days - 1) / 365; days = (days - 1) % 365; }
+        int jm, jd;
+        if (days < 186) { jm = 1 + (int) (days / 31); jd = 1 + (int) (days % 31); }
+        else { jm = 7 + (int) ((days - 186) / 30); jd = 1 + (int) ((days - 186) % 30); }
+        return new int[]{(int) jy, jm, jd};
     }
 
     // ───── به‌روزرسانی از خود داشبورد (‎/static/app/version.json و radres.apk) ─────
@@ -1012,6 +1308,8 @@ public class MainActivity extends Activity {
         Toast.makeText(this, "جای خالی صفحه‌ی گوشی را نگه دارید ← ابزارک‌ها ← رادرس", Toast.LENGTH_LONG).show();
     }
 
+    boolean[] prevOk;
+
     void fillGuide() {
         LinearLayout box = (LinearLayout) findViewById(R.id.guide_box);
         box.removeAllViews();
@@ -1073,6 +1371,10 @@ public class MainActivity extends Activity {
                 dot.setText(LiveWidget.fa(String.valueOf(i + 1))); dot.setTextColor(col(R.color.c_mut));
             }
             r.addView(dot, new LinearLayout.LayoutParams(dp(34), dp(34)));
+            if (ok[i] && prevOk != null && !prevOk[i]) {   // همین الان انجام شد: تیک با پرش کوچک
+                dot.setScaleX(0.4f); dot.setScaleY(0.4f);
+                dot.animate().scaleX(1f).scaleY(1f).setDuration(380).setStartDelay(120).setInterpolator(new android.view.animation.OvershootInterpolator(3f)).start();
+            }
             LinearLayout c = new LinearLayout(this); c.setOrientation(LinearLayout.VERTICAL);
             TextView h = line(st[i][0], ok[i] ? R.color.c_mut : R.color.c_text, true); h.setTextSize(15.5f);
             if (ok[i]) h.setPaintFlags(h.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
@@ -1104,6 +1406,8 @@ public class MainActivity extends Activity {
             list.addView(r);
         }
         box.addView(list, ll);
+        prevOk = ok;
+        pressAll(box);
 
         TextView tip = line("نکته: ویجت را نگه دارید و بکشید تا بزرگ شود؛ در حالت عریض، نمودار و قدیمی‌ترین میز هم می‌آید.", R.color.c_mut, false);
         tip.setTextSize(13); tip.setPadding(dp(8), dp(14), dp(8), 0); tip.setLineSpacing(dp(3), 1f);
@@ -1190,24 +1494,58 @@ public class MainActivity extends Activity {
     }
 
     void setFontList(boolean open) {
-        findViewById(R.id.font_list).setVisibility(open ? View.VISIBLE : View.GONE);
+        final View fl = findViewById(R.id.font_list);
+        boolean was = fl.getVisibility() == View.VISIBLE;
         findViewById(R.id.font_box).setBackgroundResource(open ? R.drawable.dd_open : R.drawable.grp);
+        if (open != was && page == R.id.pg_look && !pageNoAnim) {
+            fl.measure(View.MeasureSpec.makeMeasureSpec(((View) fl.getParent()).getWidth(), View.MeasureSpec.EXACTLY), View.MeasureSpec.UNSPECIFIED);
+            final int full = fl.getMeasuredHeight();
+            final int from = open ? 0 : fl.getHeight(), to = open ? full : 0;
+            fl.getLayoutParams().height = from; fl.setVisibility(View.VISIBLE); fl.requestLayout();
+            android.animation.ValueAnimator va = android.animation.ValueAnimator.ofInt(from, to);
+            va.setDuration(260); va.setInterpolator(new android.view.animation.DecelerateInterpolator(2f));
+            final boolean op = open;
+            va.addUpdateListener(new android.animation.ValueAnimator.AnimatorUpdateListener() {
+                public void onAnimationUpdate(android.animation.ValueAnimator a) { fl.getLayoutParams().height = (int) a.getAnimatedValue(); fl.requestLayout(); }
+            });
+            va.addListener(new android.animation.AnimatorListenerAdapter() {
+                public void onAnimationEnd(android.animation.Animator a) {
+                    fl.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    if (!op) fl.setVisibility(View.GONE);
+                    fl.requestLayout();
+                }
+            });
+            fl.setAlpha(open ? 0f : 1f); fl.animate().alpha(open ? 1f : 0f).setDuration(220).start();
+            va.start();
+        } else fl.setVisibility(open ? View.VISIBLE : View.GONE);
         TextView ar = (TextView) findViewById(R.id.font_arrow);
         android.graphics.drawable.Drawable dd = getDrawable(R.drawable.ic_down_s).mutate();
         dd.setTint(col(R.color.c_mut)); dd.setBounds(0, 0, dp(18), dp(18));
         ar.setCompoundDrawablesRelative(dd, null, null, null);
-        ar.setRotation(open ? 180 : 0);
+        ar.animate().rotation(open ? 180 : 0).setDuration(240).start();
     }
 
+    boolean segReady = false;
+
     void fillSeg() {
-        boolean ref = "refresh".equals(p.getString("tap", "open"));
+        final boolean ref = "refresh".equals(p.getString("tap", "open"));
         TextView a = (TextView) findViewById(R.id.tapOpen), b = (TextView) findViewById(R.id.tapRefresh);
         for (TextView t : new TextView[]{a, b}) {
             boolean on = (t == b) == ref;
-            t.setBackgroundResource(on ? R.drawable.seg_on : 0);
             t.setTextColor(col(on ? R.color.c_head : R.color.c_mut));
             t.setTypeface(on ? bold : reg);
         }
+        final View ind = findViewById(R.id.tap_ind);
+        ind.post(new Runnable() { public void run() {
+            View box = findViewById(R.id.tapOpen);
+            int w = box.getWidth();
+            if (w <= 0) { ind.postDelayed(this, 50); return; }
+            if (ind.getLayoutParams().width != w) { ind.getLayoutParams().width = w; ind.requestLayout(); }
+            float tx = ref ? -w : 0;   // راست‌به‌چپ: گزینه‌ی دوم سمت چپ است
+            if (segReady) ind.animate().translationX(tx).setDuration(260).setInterpolator(new android.view.animation.DecelerateInterpolator(2f)).start();
+            else ind.setTranslationX(tx);
+            segReady = true;
+        } });
     }
 
     /** پیش‌نمایش زنده: همان تصویری که روی ویجت کشیده می‌شود */

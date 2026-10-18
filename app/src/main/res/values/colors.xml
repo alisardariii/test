@@ -28,4 +28,5 @@
     <color name="c_sheet">#FAFFFFFF</color>
     <color name="c_halo">#E6F3ED</color>
     <color name="c_halo2">#D5EAE1</color>
+    <color name="c_dash">#4D0F5C4D</color>
 </resources>

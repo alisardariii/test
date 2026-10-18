@@ -31,12 +31,18 @@
                 android:textColor="#FFC2B8" android:textSize="14sp" />
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
                 android:layout_marginTop="14dp" android:baselineAligned="false">
-                <TextView android:id="@+id/refresh_now" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="46dp"
-                    android:gravity="center" android:clickable="true" android:focusable="true" android:background="@drawable/hero_btn2"
-                    android:text="تازه کن" android:textColor="#1A1405" android:textSize="15sp" />
-                <TextView android:id="@+id/hero_open" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="46dp"
-                    android:layout_marginStart="10dp" android:gravity="center" android:clickable="true" android:focusable="true" android:background="@drawable/hero_btn"
-                    android:text="باز کردن گزارش" android:textColor="#FFFFFF" android:textSize="15sp" />
+                <LinearLayout android:id="@+id/refresh_now" android:layout_width="0dp" android:layout_weight="1" android:layout_height="46dp" android:orientation="horizontal"
+                    android:gravity="center" android:clickable="true" android:focusable="true" android:background="@drawable/hero_btn2">
+                    <ImageView android:id="@+id/refresh_ic" android:layout_width="19dp" android:layout_height="19dp" android:src="@drawable/ic_refresh" android:tint="#1A1405" />
+                    <TextView android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
+                        android:text="تازه کن" android:textColor="#1A1405" android:textSize="15sp" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/hero_open" android:layout_width="0dp" android:layout_weight="1" android:layout_height="46dp" android:orientation="horizontal"
+                    android:layout_marginStart="10dp" android:gravity="center" android:clickable="true" android:focusable="true" android:background="@drawable/hero_btn">
+                    <ImageView android:id="@+id/open_ic" android:layout_width="19dp" android:layout_height="19dp" android:src="@drawable/ic_ext" android:tint="#FFFFFF" />
+                    <TextView android:id="@+id/hero_open_t" android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
+                        android:text="باز کردن گزارش" android:textColor="#FFFFFF" android:textSize="15sp" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
@@ -76,49 +82,15 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
         android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
         <TextView android:tag="hdr" android:text="مجموعه‌ها" android:layout_width="match_parent" android:layout_height="wrap_content" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="هر مجموعه یک رستوران یا هتل است، با لینک «داده‌ی خام» صفحه‌ی ‎/widget‎ داشبوردش." android:textColor="@color/c_text2" android:textSize="13sp" />
-        <LinearLayout android:id="@+id/status_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:layout_marginTop="8dp" />
-        <LinearLayout android:id="@+id/sites_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:layout_marginTop="4dp" />
-        <TextView android:id="@+id/add_site" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-            android:layout_width="match_parent" android:layout_height="48dp" android:background="@drawable/btn_ghost"
-            android:text="+  افزودن مجموعه" android:textColor="@color/c_acc" android:textSize="15sp" android:layout_marginTop="12dp" />
-        <LinearLayout android:id="@+id/form" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"
-            android:background="@drawable/grp" android:padding="16dp">
-            <TextView android:id="@+id/form_title" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="مجموعه‌ی جدید" android:textColor="@color/c_acc" android:textSize="15sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
-                android:text="اسم" android:textColor="@color/c_text2" android:textSize="13sp" />
-            <EditText android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:background="@drawable/field" android:padding="12dp"
-                android:hint="مثلاً هفت‌خوان" android:textColor="@color/c_text" android:textColorHint="@color/c_hint" android:textSize="14sp" android:inputType="text" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
-                android:gravity="center_vertical" android:layout_marginTop="10dp" android:baselineAligned="false">
-                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-                    android:text="لینک داده‌ی خام" android:textColor="@color/c_text2" android:textSize="13sp" />
-                <TextView android:id="@+id/paste" android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:clickable="true" android:focusable="true" android:padding="4dp"
-                    android:text="📋 چسباندن" android:textColor="@color/c_acc" android:textSize="13sp" />
-            </LinearLayout>
-            <EditText android:id="@+id/url" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:background="@drawable/field" android:padding="12dp"
-                android:hint="http://…/w/….json" android:textColor="@color/c_text" android:textColorHint="@color/c_hint"
-                android:textSize="13sp" android:textDirection="ltr" android:inputType="textUri" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:baselineAligned="false" android:layout_marginTop="12dp">
-                <TextView android:id="@+id/save" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                    android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_primary"
-                    android:text="ذخیره" android:textColor="#2A1C00" android:textSize="15sp" android:layout_weight="1.5" />
-                <TextView android:id="@+id/cancel" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                    android:layout_width="0dp" android:layout_height="48dp" android:background="@drawable/btn_ghost"
-                    android:text="انصراف" android:textColor="@color/c_acc" android:textSize="15sp" android:layout_weight="1" android:layout_marginStart="10dp" />
-            </LinearLayout>
-            <TextView android:id="@+id/result" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
+        <LinearLayout android:id="@+id/sites_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+        <LinearLayout android:id="@+id/add_site" android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal"
+            android:gravity="center" android:background="@drawable/dashed" android:clickable="true" android:focusable="true" android:layout_marginTop="12dp">
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_plus" android:tint="@color/c_acc" />
+            <TextView android:tag="b" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp"
+                android:text="افزودن مجموعه" android:textColor="@color/c_acc" android:textSize="15sp" />
         </LinearLayout>
+        <TextView android:id="@+id/sites_note" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:layout_marginTop="12dp"
+            android:text="مجموعه‌ی «اصلی» در کارت صفحه‌ی اول و به‌روزرسانی برنامه استفاده می‌شود." android:textColor="@color/c_mut" android:textSize="12.5sp" android:lineSpacingExtra="3dp" />
     </LinearLayout>
     </ScrollView>
 
@@ -200,13 +172,16 @@
         </LinearLayout>
         <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
             android:layout_marginStart="6dp" android:text="با زدن روی ویجت" android:textColor="@color/c_mut" android:textSize="13sp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
-            android:background="@drawable/seg_bg" android:padding="4dp" android:layout_marginTop="6dp" android:baselineAligned="false">
+        <FrameLayout android:id="@+id/tap_seg" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@drawable/seg_bg" android:padding="4dp" android:layout_marginTop="6dp">
+            <View android:id="@+id/tap_ind" android:layout_width="0dp" android:layout_height="42dp" android:layout_gravity="start" android:background="@drawable/seg_on" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false">
             <TextView android:id="@+id/tapOpen" android:layout_width="0dp" android:layout_weight="1" android:layout_height="42dp" android:gravity="center"
                 android:clickable="true" android:focusable="true" android:text="گزارش باز شود" android:textColor="@color/c_mut" android:textSize="14sp" />
             <TextView android:id="@+id/tapRefresh" android:layout_width="0dp" android:layout_weight="1" android:layout_height="42dp" android:gravity="center"
-                android:layout_marginStart="4dp" android:clickable="true" android:focusable="true" android:text="فقط تازه شود" android:textColor="@color/c_mut" android:textSize="14sp" />
+                android:clickable="true" android:focusable="true" android:text="فقط تازه شود" android:textColor="@color/c_mut" android:textSize="14sp" />
         </LinearLayout>
+        </FrameLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/grp" android:layout_marginTop="14dp" android:paddingLeft="16dp" android:paddingRight="16dp">
             <Switch android:id="@+id/privacy" android:layout_width="match_parent" android:layout_height="wrap_content"

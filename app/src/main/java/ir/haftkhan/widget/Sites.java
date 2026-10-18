@@ -48,6 +48,49 @@ public class Sites {
 
     public static void setForWidget(Context c, int widgetId, int idx) { p(c).edit().putInt("w_" + widgetId, idx).apply(); }
 
+    static final String[] KEYS = {"last_", "offline_", "last_at_", "seen_"};
+
+    /** جابه‌جایی دو مجموعه همراه با داده‌های ذخیره‌شده و ویجت‌هایشان */
+    static void swapState(Context c, int a, int b) {
+        SharedPreferences p = p(c);
+        SharedPreferences.Editor e = p.edit();
+        java.util.Map<String, ?> all = p.getAll();
+        for (String k : KEYS) {
+            Object va = all.get(k + a), vb = all.get(k + b);
+            put(e, k + a, vb); put(e, k + b, va);
+        }
+        for (String key : all.keySet()) if (key.startsWith("w_") && all.get(key) instanceof Integer) {
+            int v = (Integer) all.get(key);
+            if (v == a) e.putInt(key, b); else if (v == b) e.putInt(key, a);
+        }
+        e.apply();
+    }
+
+    static void put(SharedPreferences.Editor e, String k, Object v) {
+        if (v == null) e.remove(k);
+        else if (v instanceof String) e.putString(k, (String) v);
+        else if (v instanceof Boolean) e.putBoolean(k, (Boolean) v);
+        else if (v instanceof Integer) e.putInt(k, (Integer) v);
+        else if (v instanceof Long) e.putLong(k, (Long) v);
+    }
+
+    public static void makeMain(Context c, int idx) {
+        List<Site> l = all(c);
+        if (idx <= 0 || idx >= l.size()) return;
+        Site s = l.get(idx); l.set(idx, l.get(0)); l.set(0, s);
+        save(c, l); swapState(c, 0, idx);
+    }
+
+    public static void remove(Context c, int idx) {
+        List<Site> l = all(c);
+        if (idx < 0 || idx >= l.size()) return;
+        for (int i = idx; i < l.size() - 1; i++) swapState(c, i, i + 1);   // داده‌ها هم با فهرست یکی جلو می‌آیند
+        l.remove(idx); save(c, l);
+        SharedPreferences.Editor e = p(c).edit();
+        for (String k : KEYS) e.remove(k + l.size());
+        e.apply();
+    }
+
     public static String jsonUrl(String u) {
         u = u == null ? "" : u.trim();
         if (u.isEmpty()) return "";
