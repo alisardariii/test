@@ -266,9 +266,9 @@ public class LiveWidget extends AppWidgetProvider {
                 if (port && mnW > 0 && mxH > 0) { cw = mnW; ch = mxH; } else if (!port && mxW > 0 && mnH > 0) { cw = mxW; ch = mnH; }
             }
             float padDp = pad / d, bpDp = bp / d;
-            float mw = shape == 1 ? (cw - 2 * padDp - 8f) * 1.35f / 2.35f : cw - 2 * padDp;
-            float mh = shape == 2 ? (ch - 2 * padDp - 8f) * 1.5f / 2.5f : ch - 2 * padDp;
-            int W = (int) ((mw - 2 * bpDp) * d), H = (int) ((mh - 2 * bpDp) * d);
+            float bw = shape == 1 ? (cw - 2 * padDp - 8f) * 1.35f / 2.35f : cw - 2 * padDp;
+            float bh = shape == 2 ? (ch - 2 * padDp - 8f) * 1.5f / 2.5f : ch - 2 * padDp;
+            int W = (int) ((bw - 2 * bpDp) * d), H = (int) ((bh - 2 * bpDp) * d);
             float lim = Math.max(W, H) > 1100 ? 1100f / Math.max(W, H) : 1f;
             W = Math.max(60, (int) (W * lim)); H = Math.max(60, (int) (H * lim));
             Bitmap card = MainCard.draw(ctx, Fonts.current(ctx), nm, xx, off && last != null, at, hidden(ctx), W, H, d);
