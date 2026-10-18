@@ -253,6 +253,33 @@ public class LiveWidget extends AppWidgetProvider {
         v.setViewPadding(R.id.blk_main, bp, bp, bp, bp);
         v.setViewPadding(R.id.blk_tbl, bp, bp, bp, bp);
         applyFont(ctx, v, tx, sz, shape, w, s, pad, bp, d);
+        // بلوک اصلی: یک تصویر با خط‌های هم‌عرض (اندازه‌ی هر خط خودش با عرض ویجت تنظیم می‌شود)
+        try {
+            JSONObject xx = last == null ? null : new JSONObject(last);
+            String nm = name;
+            if (xx != null && site != null && (site.name == null || site.name.isEmpty())) nm = xx.optString("site_name", name);
+            float cw = w, ch = h;
+            if (o != null) {
+                int mnW = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0), mxW = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0);
+                int mnH = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0), mxH = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+                boolean port = ctx.getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT;
+                if (port && mnW > 0 && mxH > 0) { cw = mnW; ch = mxH; } else if (!port && mxW > 0 && mnH > 0) { cw = mxW; ch = mnH; }
+            }
+            float padDp = pad / d, bpDp = bp / d;
+            float mw = shape == 1 ? (cw - 2 * padDp - 8f) * 1.35f / 2.35f : cw - 2 * padDp;
+            float mh = shape == 2 ? (ch - 2 * padDp - 8f) * 1.5f / 2.5f : ch - 2 * padDp;
+            int W = (int) ((mw - 2 * bpDp) * d), H = (int) ((mh - 2 * bpDp) * d);
+            float lim = Math.max(W, H) > 1100 ? 1100f / Math.max(W, H) : 1f;
+            W = Math.max(60, (int) (W * lim)); H = Math.max(60, (int) (H * lim));
+            Bitmap card = MainCard.draw(ctx, Fonts.current(ctx), nm, xx, off && last != null, at, hidden(ctx), W, H, d);
+            v.setImageViewBitmap(R.id.main_img, card);
+            v.setViewVisibility(R.id.main_img, View.VISIBLE);
+            for (int id : new int[]{R.id.hdr_row, R.id.amount, R.id.amount_img, R.id.unit, R.id.unit_img, R.id.pct, R.id.pct_img,
+                    R.id.info, R.id.info_img, R.id.status, R.id.status_img})
+                v.setViewVisibility(id, View.GONE);
+        } catch (Throwable e) {
+            v.setViewVisibility(R.id.main_img, View.GONE);
+        }
         return v;
     }
 

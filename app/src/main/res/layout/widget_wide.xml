@@ -9,7 +9,9 @@
         android:orientation="horizontal" android:layoutDirection="rtl" android:baselineAligned="false" android:padding="8dp">
         <LinearLayout android:id="@+id/blk_main" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.35"
             android:orientation="vertical" android:gravity="center_vertical" android:background="@drawable/block" android:padding="10dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            <ImageView android:id="@+id/main_img" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:scaleType="fitCenter" android:visibility="gone" />
+            <LinearLayout android:id="@+id/hdr_row" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:layoutDirection="ltr" android:gravity="center_vertical">
                 <TextView android:id="@+id/refresh" android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="⟳" android:textColor="#E6EEEA" android:textSize="15sp" android:paddingRight="6dp" />
