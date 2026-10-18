@@ -117,7 +117,7 @@ public class MainCard {
                 float cpx = base * avail / Math.max(1f, pc.measureText(l.cap));
                 px = Math.min(px, cpx);
             }
-            l.px = px;
+            l.px = px * 0.97f;   // کمی حاشیه تا خط هیچ‌وقت به دو خط نشکند
         }
         // ۲) جا شدن در ارتفاع
         float gapK = 0.42f;
