@@ -48,11 +48,31 @@ public class MainActivity extends Activity {
     int page = R.id.pg_home;
     final int[] PAGES = {R.id.pg_home, R.id.pg_sites, R.id.pg_alerts, R.id.pg_look, R.id.pg_update, R.id.pg_guide};
 
+    /** تم برنامه: روشن، تیره یا مثل گوشی (pref "theme": light / dark / auto) */
+    @Override
+    protected void attachBaseContext(Context base) {
+        String t = base.getSharedPreferences(LiveWidget.PREFS, 0).getString("theme", "auto");
+        if ("auto".equals(t)) { super.attachBaseContext(base); return; }
+        android.content.res.Configuration c = new android.content.res.Configuration(base.getResources().getConfiguration());
+        c.uiMode = (c.uiMode & ~android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                | ("dark".equals(t) ? android.content.res.Configuration.UI_MODE_NIGHT_YES : android.content.res.Configuration.UI_MODE_NIGHT_NO);
+        super.attachBaseContext(base.createConfigurationContext(c));
+    }
+
+    boolean night() {
+        return (getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    int col(int id) { return getResources().getColor(id, null); }
+
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        getWindow().setStatusBarColor(Color.parseColor("#F6F2EA"));
-        if (Build.VERSION.SDK_INT >= 23) getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        boolean dk = night();
+        getWindow().setBackgroundDrawable(new GlassBg(dk));
+        getWindow().setStatusBarColor(col(R.color.c_bar));
+        getWindow().setNavigationBarColor(col(R.color.c_bar));
+        getWindow().getDecorView().setSystemUiVisibility(dk ? 0 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         setContentView(R.layout.activity_main);
         try {
             reg = Typeface.createFromAsset(getAssets(), "fonts/samim.ttf");
@@ -89,6 +109,9 @@ public class MainActivity extends Activity {
             public void onClick(View v) { go(R.id.pg_alerts); }
         });
 
+        icon((TextView) findViewById(R.id.refresh_now), R.drawable.ic_refresh, 0xFF1A1405);
+        icon((TextView) findViewById(R.id.hero_open), R.drawable.ic_ext, Color.WHITE);
+
         // مجموعه‌ها
         findViewById(R.id.add_site).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { openForm(-1); }
@@ -112,25 +135,11 @@ public class MainActivity extends Activity {
         fillSites();
 
         // هشدارها — هر تغییر همان لحظه ذخیره می‌شود
-        alertSwitch(R.id.al_tables, "al_tables", "میز بیش از حد مجاز نشسته", "وقتی میزی در سالن بیشتر از عدد زیر بماند");
+        alertSwitch(R.id.al_tables, "al_tables", "میز بیش از حد مجاز نشسته", "وقتی میزی در سالن بیشتر از این بماند");
         alertSwitch(R.id.al_watch, "al_watch", "نگهبان صندوق", "حذف فیش، تخفیف بعد از چاپ، پرداخت تکراری");
         alertSwitch(R.id.al_taraz, "al_taraz", "تراز صفر نشده", "آخر شب، اگر حساب فیش‌ها باز مانده باشد");
         alertSwitch(R.id.al_sum, "al_sum", "خلاصه‌ی فروش امشب", "آخر شب: فروش، تعداد فیش و سهم هر روش پرداخت");
-        final EditText mn = (EditText) findViewById(R.id.al_min);
-        mn.setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
-        mn.addTextChangedListener(new android.text.TextWatcher() {
-            public void beforeTextChanged(CharSequence s, int a, int b2, int c) {}
-            public void onTextChanged(CharSequence s, int a, int b2, int c) {}
-            public void afterTextChanged(android.text.Editable e) {
-                int m = parseNum(e.toString());
-                if (m >= 5) p.edit().putInt("al_min", m).apply();
-            }
-        });
-        mn.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            public void onFocusChange(View v, boolean has) {
-                if (!has) mn.setText(LiveWidget.fa(String.valueOf(p.getInt("al_min", 60))));
-            }
-        });
+        setupMinutes();
         findViewById(R.id.al_test).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (!notifOk()) { askNotif(); return; }
@@ -176,9 +185,120 @@ public class MainActivity extends Activity {
         setupUpdate();
         applyFont(findViewById(R.id.page));
         fillSeg();
+        fillTheme();
         fillFonts();
         fillMenu();
         refreshAll(false);
+        if (b != null) go(b.getInt("page", R.id.pg_home));
+    }
+
+    @Override protected void onSaveInstanceState(Bundle o) { super.onSaveInstanceState(o); o.putInt("page", page); }
+
+    /** آیکون خطی کنار متن دکمه */
+    void icon(TextView t, int res, int color) {
+        android.graphics.drawable.Drawable d = getDrawable(res).mutate();
+        d.setTint(color); d.setBounds(0, 0, dp(19), dp(19));
+        t.setCompoundDrawablesRelative(d, null, null, null);
+        t.setCompoundDrawablePadding(dp(8));
+    }
+
+    // ───── تم ─────
+    void fillTheme() {
+        LinearLayout g = (LinearLayout) findViewById(R.id.theme_seg);
+        g.removeAllViews();
+        String cur = p.getString("theme", "auto");
+        String[][] o = {{"light", "روشن"}, {"dark", "تیره"}, {"auto", "مثل گوشی"}};
+        int[] ic = {R.drawable.ic_sun, R.drawable.ic_moon, R.drawable.ic_phone};
+        for (int i = 0; i < o.length; i++) {
+            final String key = o[i][0];
+            boolean on = key.equals(cur);
+            TextView t = new TextView(this);
+            t.setText(o[i][1]); t.setGravity(Gravity.CENTER); t.setTextSize(13.5f);
+            t.setTypeface(on ? bold : reg);
+            int c = col(on ? R.color.c_head : R.color.c_mut);
+            t.setTextColor(c);
+            android.graphics.drawable.Drawable d = getDrawable(ic[i]).mutate();
+            d.setTint(c); d.setBounds(0, 0, dp(22), dp(22));
+            t.setCompoundDrawables(null, d, null, null); t.setCompoundDrawablePadding(dp(4));
+            t.setPadding(0, dp(10), 0, dp(9));
+            if (on) t.setBackgroundResource(R.drawable.seg_on);
+            t.setClickable(true);
+            t.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    if (key.equals(p.getString("theme", "auto"))) return;
+                    p.edit().putString("theme", key).commit();
+                    recreate();
+                }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+            if (i > 0) lp.setMarginStart(dp(4));
+            g.addView(t, lp);
+        }
+    }
+
+    // ───── حد مجاز میز: نوار کشویی ۳۰ تا ۱۲۰ دقیقه، هر پله ۵ دقیقه ─────
+    static final int MIN_LO = 30, MIN_HI = 120, MIN_STEP = 5;
+
+    void setupMinutes() {
+        final android.widget.SeekBar sb = (android.widget.SeekBar) findViewById(R.id.al_min);
+        sb.setMax((MIN_HI - MIN_LO) / MIN_STEP);
+        sb.setProgressTintList(ColorStateList.valueOf(Color.parseColor("#F2C46B")));
+        sb.setProgressBackgroundTintList(ColorStateList.valueOf(col(R.color.c_swoff)));
+        int m = Math.max(MIN_LO, Math.min(MIN_HI, p.getInt("al_min", 60)));
+        sb.setProgress((m - MIN_LO) / MIN_STEP);
+        minTitle(m);
+        sb.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(android.widget.SeekBar s2, int v, boolean user) {
+                int mm = MIN_LO + v * MIN_STEP;
+                minTitle(mm);
+                if (user) p.edit().putInt("al_min", mm).apply();
+            }
+            public void onStartTrackingTouch(android.widget.SeekBar s2) {}
+            public void onStopTrackingTouch(android.widget.SeekBar s2) { fillMenu(); }
+        });
+        LinearLayout tk = (LinearLayout) findViewById(R.id.ticks);
+        tk.removeAllViews();
+        String[] lab = {"۳۰", "۶۰", "۹۰", "۱۲۰"};
+        for (int i = 0; i < lab.length; i++) {
+            if (i > 0) tk.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
+            TextView t = new TextView(this);
+            t.setText(lab[i]); t.setTextSize(11.5f); t.setTextColor(col(R.color.c_mut)); t.setTypeface(reg);
+            tk.addView(t);
+        }
+        tk.setPadding(dp(12), 0, dp(12), 0);
+    }
+
+    void minTitle(int m) {
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder("میز بیش از ");
+        int a = sb.length(); sb.append("\u00A0").append(LiveWidget.fa(String.valueOf(m))).append("\u00A0");
+        sb.setSpan(new Pill(col(R.color.c_acc), night() ? 0xFF10201B : Color.WHITE, bold), a, sb.length(), 0);
+        sb.append(" دقیقه");
+        int s0 = sb.length();
+        sb.append("\n").append("وقتی میزی در سالن بیشتر از این بماند");
+        sb.setSpan(new android.text.style.RelativeSizeSpan(0.8f), s0, sb.length(), 0);
+        sb.setSpan(new android.text.style.ForegroundColorSpan(col(R.color.c_mut)), s0, sb.length(), 0);
+        ((Switch) findViewById(R.id.al_tables)).setText(sb);
+    }
+
+    /** عدد داخل یک قرص رنگی */
+    static class Pill extends android.text.style.ReplacementSpan {
+        final int bg, fg; final Typeface tf;
+        Pill(int bg, int fg, Typeface tf) { this.bg = bg; this.fg = fg; this.tf = tf; }
+        @Override public int getSize(android.graphics.Paint pt, CharSequence t, int s, int e, android.graphics.Paint.FontMetricsInt fm) {
+            Typeface o = pt.getTypeface(); pt.setTypeface(tf);
+            int w = Math.round(pt.measureText(t, s, e)); pt.setTypeface(o); return w;
+        }
+        @Override public void draw(android.graphics.Canvas c, CharSequence t, int s, int e, float x, int top, int y, int bottom, android.graphics.Paint pt) {
+            Typeface o = pt.getTypeface(); int oc = pt.getColor();
+            pt.setTypeface(tf);
+            float w = pt.measureText(t, s, e);
+            android.graphics.Paint.FontMetrics fm = pt.getFontMetrics();
+            pt.setColor(bg);
+            float r = (fm.descent - fm.ascent) * 0.3f;
+            c.drawRoundRect(new android.graphics.RectF(x, y + fm.ascent * 0.92f, x + w, y + fm.descent * 0.9f), r, r, pt);
+            pt.setColor(fg); c.drawText(t, s, e, x, y, pt);
+            pt.setTypeface(o); pt.setColor(oc);
+        }
     }
 
     @Override protected void onResume() { super.onResume(); permState(); fillHome(); fillStatus(); fillLog(); fillMenu(); }
@@ -205,9 +325,11 @@ public class MainActivity extends Activity {
     void headers(View v) {
         if (v instanceof TextView && "hdr".equals(v.getTag())) {
             TextView t = (TextView) v;
-            t.setText("→   " + t.getText());
             t.setTag("b");
-            t.setTextColor(Color.parseColor("#0B3F36")); t.setTextSize(21);
+            t.setTextColor(col(R.color.c_head)); t.setTextSize(21);
+            android.graphics.drawable.Drawable bk = getDrawable(R.drawable.ic_back).mutate();
+            bk.setTint(col(R.color.c_head)); bk.setBounds(0, 0, dp(24), dp(24));
+            t.setCompoundDrawablesRelative(bk, null, null, null); t.setCompoundDrawablePadding(dp(10));
             t.setPadding(dp(4), dp(22), dp(4), dp(16));
             t.setClickable(true);
             t.setOnClickListener(new View.OnClickListener() { public void onClick(View x) { go(R.id.pg_home); } });
@@ -225,16 +347,17 @@ public class MainActivity extends Activity {
         for (String k : new String[]{"al_tables", "al_watch", "al_taraz", "al_sum"}) if (p.getBoolean(k, true)) on++;
         String fn = "";
         for (String[] f : Fonts.LIST) if (f[0].equals(Fonts.current(this))) fn = f[1];
-        menuRow(m, "🏪", "#E7F3EE", "مجموعه‌ها", ns == 0 ? "هنوز نیست" : LiveWidget.fa(String.valueOf(ns)) + " مجموعه", null, R.id.pg_sites);
-        menuRow(m, "🔔", "#FFF2DA", "هشدارها", LiveWidget.fa(String.valueOf(on)) + " از ۴ روشن", null, R.id.pg_alerts);
-        menuRow(m, "▦", "#EAF0FF", "ظاهر ویجت", fn, null, R.id.pg_look);
-        menuRow(m, "⬇", "#F1ECFF", "به‌روزرسانی", newApk == null ? LiveWidget.fa(myName()) : null, newApk == null ? null : "نسخه‌ی " + LiveWidget.fa(newName), R.id.pg_update);
-        menuRow(m, "?", "#EEF1EF", "راهنمای نصب ویجت", null, null, R.id.pg_guide);
+        menuRow(m, R.drawable.ic_store, "مجموعه‌ها", ns == 0 ? "هنوز نیست" : LiveWidget.fa(String.valueOf(ns)) + " مجموعه", null, R.id.pg_sites);
+        menuRow(m, R.drawable.ic_bell, "هشدارها", LiveWidget.fa(String.valueOf(on)) + " از ۴ روشن", null, R.id.pg_alerts);
+        String th = p.getString("theme", "auto");
+        menuRow(m, R.drawable.ic_widget, "ظاهر", fn + " · " + ("dark".equals(th) ? "تیره" : "light".equals(th) ? "روشن" : "مثل گوشی"), null, R.id.pg_look);
+        menuRow(m, R.drawable.ic_down, "به‌روزرسانی", newApk == null ? LiveWidget.fa(myName()) : null, newApk == null ? null : "نسخه‌ی " + LiveWidget.fa(newName), R.id.pg_update);
+        menuRow(m, R.drawable.ic_help, "راهنمای نصب ویجت", null, null, R.id.pg_guide);
     }
 
-    void menuRow(LinearLayout m, String ico, String icoBg, String title, String val, String badge, final int target) {
+    void menuRow(LinearLayout m, int ico, String title, String val, String badge, final int target) {
         if (m.getChildCount() > 0) {
-            View d = new View(this); d.setBackgroundColor(Color.parseColor("#F0ECE4"));
+            View d = new View(this); d.setBackgroundColor(col(R.color.c_line));
             LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
             dl.setMarginStart(dp(62)); m.addView(d, dl);
         }
@@ -243,18 +366,17 @@ public class MainActivity extends Activity {
         r.setPadding(dp(16), dp(13), dp(16), dp(13));
         r.setBackgroundResource(R.drawable.rowsel); r.setClickable(true);
         r.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { go(target); } });
-        TextView ic = new TextView(this);
-        ic.setText(ico); ic.setGravity(Gravity.CENTER); ic.setTextSize(17); ic.setTextColor(Color.parseColor("#0F5C4D"));
-        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
-        g.setColor(Color.parseColor(icoBg)); g.setCornerRadius(dp(10)); ic.setBackground(g);
+        android.widget.ImageView ic = new android.widget.ImageView(this);
+        ic.setImageResource(ico); ic.setColorFilter(col(R.color.c_acc));
+        ic.setBackgroundResource(R.drawable.ico_bg); ic.setPadding(dp(7), dp(7), dp(7), dp(7));
         r.addView(ic, new LinearLayout.LayoutParams(dp(34), dp(34)));
         TextView t = new TextView(this);
-        t.setText(title); t.setTextSize(16); t.setTextColor(Color.parseColor("#1D2B27")); t.setTypeface(reg);
+        t.setText(title); t.setTextSize(16); t.setTextColor(col(R.color.c_text)); t.setTypeface(reg);
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         tl.setMarginStart(dp(12)); r.addView(t, tl);
         if (val != null && !val.isEmpty()) {
             TextView v = new TextView(this);
-            v.setText(val); v.setTextSize(14); v.setTextColor(Color.parseColor("#7A8A83")); v.setTypeface(reg);
+            v.setText(val); v.setTextSize(14); v.setTextColor(col(R.color.c_mut)); v.setTypeface(reg);
             r.addView(v);
         }
         if (badge != null) {
@@ -263,9 +385,9 @@ public class MainActivity extends Activity {
             v.setBackgroundResource(R.drawable.badge); v.setPadding(dp(9), dp(2), dp(9), dp(2));
             r.addView(v);
         }
-        TextView ch = new TextView(this);
-        ch.setText("‹"); ch.setTextSize(20); ch.setTextColor(Color.parseColor("#B9C2BE"));
-        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        android.widget.ImageView ch = new android.widget.ImageView(this);
+        ch.setImageResource(R.drawable.ic_chev); ch.setColorFilter(col(R.color.c_chev));
+        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(dp(16), dp(16));
         cl.setMarginStart(dp(10)); r.addView(ch, cl);
         m.addView(r);
     }
@@ -322,7 +444,7 @@ public class MainActivity extends Activity {
         JSONArray a;
         try { a = new JSONArray(p.getString("log", "[]")); } catch (Exception e) { a = new JSONArray(); }
         if (a.length() == 0) {
-            TextView t = line("هنوز هشداری نیامده.", "#93A099", false); t.setPadding(dp(16), dp(14), dp(16), dp(14)); la.addView(t);
+            TextView t = line("هنوز هشداری نیامده.", R.color.c_hint, false); t.setPadding(dp(16), dp(14), dp(16), dp(14)); la.addView(t);
         } else la.addView(alertRow(a.optJSONObject(a.length() - 1)));
         ((TextView) findViewById(R.id.row_log_t)).setText("همه‌ی هشدارها" + (a.length() > 0 ? " (" + LiveWidget.fa(String.valueOf(a.length())) + ")" : ""));
     }
@@ -348,7 +470,7 @@ public class MainActivity extends Activity {
         LinearLayout box = (LinearLayout) findViewById(R.id.status_list);
         box.removeAllViews();
         List<Sites.Site> l = Sites.all(this);
-        if (l.isEmpty()) { box.addView(line("هنوز مجموعه‌ای اضافه نشده.", "#93A099", false)); return; }
+        if (l.isEmpty()) { box.addView(line("هنوز مجموعه‌ای اضافه نشده.", R.color.c_hint, false)); return; }
         for (int i = 0; i < l.size(); i++) {
             boolean off = p.getBoolean("offline_" + i, false);
             String at = p.getString("last_at_" + i, "");
@@ -359,7 +481,15 @@ public class MainActivity extends Activity {
 
     TextView line(String s, String color, boolean b) {
         TextView t = new TextView(this);
-        t.setText(s); t.setTextColor(Color.parseColor(color)); t.setTextSize(14); t.setTypeface(b ? bold : reg);
+        t.setText(s); t.setTextColor(Color.parseColor(color)); t.setTextSize(14);
+        t.setTypeface(b ? bold : reg);
+        t.setPadding(0, dp(4), 0, dp(4));
+        return t;
+    }
+
+    TextView line(String s, int colorRes, boolean b) {
+        TextView t = new TextView(this);
+        t.setText(s); t.setTextColor(col(colorRes)); t.setTextSize(14); t.setTypeface(b ? bold : reg);
         t.setPadding(0, dp(4), 0, dp(4));
         return t;
     }
@@ -422,12 +552,12 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             rl.topMargin = dp(8); row.setLayoutParams(rl);
             LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
-            TextView nm = new TextView(this); nm.setText(l.get(i).name); nm.setTextColor(Color.parseColor("#0B3F36")); nm.setTextSize(15); nm.setTypeface(bold);
-            TextView ul = new TextView(this); ul.setText(l.get(i).url); ul.setTextColor(Color.parseColor("#93A099")); ul.setTextSize(11);
+            TextView nm = new TextView(this); nm.setText(l.get(i).name); nm.setTextColor(col(R.color.c_head)); nm.setTextSize(15); nm.setTypeface(bold);
+            TextView ul = new TextView(this); ul.setText(l.get(i).url); ul.setTextColor(col(R.color.c_hint)); ul.setTextSize(11);
             ul.setTextDirection(View.TEXT_DIRECTION_LTR); ul.setSingleLine(true); ul.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
             col.addView(nm); col.addView(ul);
             row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            row.addView(chip("ویرایش", "#0F5C4D", new View.OnClickListener() { public void onClick(View v) { openForm(idx); } }));
+            row.addView(chip("ویرایش", R.color.c_acc, new View.OnClickListener() { public void onClick(View v) { openForm(idx); } }));
             row.addView(chip("حذف", "#B03A2E", new View.OnClickListener() { public void onClick(View v) {
                 new AlertDialog.Builder(MainActivity.this).setMessage("«" + l.get(idx).name + "» حذف شود؟")
                         .setPositiveButton("حذف", new DialogInterface.OnClickListener() { public void onClick(DialogInterface d, int w) {
@@ -442,7 +572,7 @@ public class MainActivity extends Activity {
 
     TextView chip(String text, String color, View.OnClickListener l) {
         TextView t = new TextView(this);
-        t.setText(text); t.setTextColor(Color.parseColor(color)); t.setTextSize(13); t.setTypeface(bold);
+        t.setText(text); t.setTextColor("#B03A2E".equals(color) ? col(R.color.c_badfg) : col(R.color.c_acc)); t.setTextSize(13); t.setTypeface(bold);
         t.setBackgroundResource(R.drawable.btn_small); t.setPadding(dp(12), dp(6), dp(12), dp(6));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMarginStart(dp(6)); t.setLayoutParams(lp); t.setOnClickListener(l);
@@ -453,14 +583,14 @@ public class MainActivity extends Activity {
     void tint(Switch sw) {
         int[][] st = {{android.R.attr.state_checked}, {}};
         sw.setThumbTintList(new ColorStateList(st, new int[]{Color.parseColor("#E3A12F"), Color.parseColor("#FFFFFF")}));
-        sw.setTrackTintList(new ColorStateList(st, new int[]{Color.parseColor("#F2C46B"), Color.parseColor("#B9C2BE")}));
+        sw.setTrackTintList(new ColorStateList(st, new int[]{Color.parseColor("#F2C46B"), col(R.color.c_swoff)}));
     }
 
     void twoLine(Switch sw, String title, String sub) {
         android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(title);
         int s0 = sb.length(); sb.append("\n").append(sub);
         sb.setSpan(new android.text.style.RelativeSizeSpan(0.8f), s0, sb.length(), 0);
-        sb.setSpan(new android.text.style.ForegroundColorSpan(Color.parseColor("#7A8A83")), s0, sb.length(), 0);
+        sb.setSpan(new android.text.style.ForegroundColorSpan(col(R.color.c_mut)), s0, sb.length(), 0);
         sw.setText(sb);
         sw.setLineSpacing(dp(2), 1f);
     }
@@ -516,12 +646,12 @@ public class MainActivity extends Activity {
         box.removeAllViews();
         JSONArray a;
         try { a = new JSONArray(p.getString("log", "[]")); } catch (Exception e) { a = new JSONArray(); }
-        if (a.length() == 0) { TextView t = line("هنوز هشداری نیامده.", "#93A099", false); t.setPadding(dp(16), dp(14), dp(16), dp(14)); box.addView(t); return; }
+        if (a.length() == 0) { TextView t = line("هنوز هشداری نیامده.", R.color.c_hint, false); t.setPadding(dp(16), dp(14), dp(16), dp(14)); box.addView(t); return; }
         for (int i = a.length() - 1; i >= 0 && i >= a.length() - 20; i--) {
             JSONObject o = a.optJSONObject(i);
             if (o == null) continue;
             if (box.getChildCount() > 0) {
-                View d = new View(this); d.setBackgroundColor(Color.parseColor("#F0ECE4"));
+                View d = new View(this); d.setBackgroundColor(col(R.color.c_line));
                 box.addView(d, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
             }
             box.addView(alertRow(o));
@@ -532,9 +662,9 @@ public class MainActivity extends Activity {
     View alertRow(JSONObject o) {
         String k = o.optString("k", ""), title = o.optString("title", "");
         int dot;
-        if ("summary".equals(k) || title.contains("خلاصه")) dot = Color.parseColor("#0F5C4D");
+        if ("summary".equals(k) || title.contains("خلاصه")) dot = col(R.color.c_acc);
         else if ("tbl".equals(k) || title.contains("میز بیش")) dot = Color.parseColor("#B03A2E");
-        else if (k.isEmpty() && title.contains("آزمایشی")) dot = Color.parseColor("#93A099");
+        else if (k.isEmpty() && title.contains("آزمایشی")) dot = col(R.color.c_hint);
         else dot = Color.parseColor("#E3A12F");
         LinearLayout r = new LinearLayout(this);
         r.setOrientation(LinearLayout.HORIZONTAL);
@@ -547,15 +677,15 @@ public class MainActivity extends Activity {
         LinearLayout col = new LinearLayout(this); col.setOrientation(LinearLayout.VERTICAL);
         int dash = title.indexOf(" — ");
         String head = dash > 0 && Sites.all(this).size() <= 1 ? title.substring(dash + 3) : title;
-        TextView h = line(head, "#1D2B27", true); h.setTextSize(15); h.setPadding(0, 0, 0, dp(2));
-        TextView x = line(o.optString("text"), "#6B7A74", false); x.setTextSize(13); x.setPadding(0, 0, 0, 0); x.setLineSpacing(dp(2), 1f);
+        TextView h = line(head, R.color.c_text, true); h.setTextSize(15); h.setPadding(0, 0, 0, dp(2));
+        TextView x = line(o.optString("text"), R.color.c_mut, false); x.setTextSize(13); x.setPadding(0, 0, 0, 0); x.setLineSpacing(dp(2), 1f);
         col.addView(h); col.addView(x);
         LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         cl.setMarginStart(dp(12)); r.addView(col, cl);
         String t = o.optString("t", "");
         String today = new java.text.SimpleDateFormat("MM/dd", java.util.Locale.US).format(new java.util.Date());
         String tm = t.startsWith(today + " ") ? t.substring(t.indexOf(' ') + 1) : t;
-        TextView tv = line(LiveWidget.fa(tm), "#9AA6A1", false); tv.setTextSize(12); tv.setPadding(0, dp(2), 0, 0);
+        TextView tv = line(LiveWidget.fa(tm), R.color.c_mut, false); tv.setTextSize(12); tv.setPadding(0, dp(2), 0, 0);
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tl.setMarginStart(dp(10)); r.addView(tv, tl);
         return r;
@@ -680,13 +810,13 @@ public class MainActivity extends Activity {
         num.setText(LiveWidget.fa(String.valueOf(n)));
         num.setTag("b");
         num.setGravity(Gravity.CENTER);
-        num.setTextColor(Color.parseColor("#0F5C4D"));
+        num.setTextColor(col(R.color.c_acc));
         num.setTextSize(14);
         num.setBackgroundResource(R.drawable.num);
         row.addView(num, new LinearLayout.LayoutParams(dp(30), dp(30)));
         TextView t = new TextView(this);
         t.setText(text);
-        t.setTextColor(Color.parseColor("#1D2B27"));
+        t.setTextColor(col(R.color.c_text));
         t.setTextSize(14);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         lp.setMarginStart(dp(12));
@@ -698,9 +828,9 @@ public class MainActivity extends Activity {
         res.setVisibility(View.VISIBLE);
         res.setText(m);
         if (bold != null) res.setTypeface(bold);
-        if (st > 0) { res.setBackgroundResource(R.drawable.chip_ok); res.setTextColor(Color.parseColor("#0F5C4D")); }
-        else if (st < 0) { res.setBackgroundResource(R.drawable.chip_bad); res.setTextColor(Color.parseColor("#B03A2E")); }
-        else { res.setBackgroundResource(R.drawable.field); res.setTextColor(Color.parseColor("#5B6A64")); }
+        if (st > 0) { res.setBackgroundResource(R.drawable.chip_ok); res.setTextColor(col(R.color.c_acc)); }
+        else if (st < 0) { res.setBackgroundResource(R.drawable.chip_bad); res.setTextColor(col(R.color.c_badfg)); }
+        else { res.setBackgroundResource(R.drawable.field); res.setTextColor(col(R.color.c_text2)); }
     }
 
     // ───── ظاهر ویجت ─────
@@ -724,21 +854,21 @@ public class MainActivity extends Activity {
         for (int i = 0; i < Fonts.LIST.length; i++) {
             final String[] f = Fonts.LIST[i];
             boolean on = f[0].equals(cur);
-            View d = new View(this); d.setBackgroundColor(Color.parseColor("#F0ECE4"));
+            View d = new View(this); d.setBackgroundColor(col(R.color.c_line));
             box.addView(d, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
             LinearLayout r = new LinearLayout(this);
             r.setOrientation(LinearLayout.HORIZONTAL); r.setGravity(Gravity.CENTER_VERTICAL);
             r.setPadding(dp(16), dp(11), dp(16), dp(11));
             r.setBackgroundResource(on ? R.drawable.rowon : R.drawable.rowsel); r.setClickable(true);
             TextView rd = new TextView(this);
-            rd.setText(on ? "◉" : "○"); rd.setTextSize(18); rd.setTextColor(Color.parseColor(on ? "#E3A12F" : "#B9C2BE"));
+            rd.setText(on ? "◉" : "○"); rd.setTextSize(18); rd.setTextColor(on ? Color.parseColor("#E3A12F") : col(R.color.c_chev));
             r.addView(rd);
             TextView n = new TextView(this);
-            n.setText(f[1]); n.setTextSize(15); n.setTextColor(Color.parseColor("#1D2B27")); n.setTypeface(fontTf(f[0], on));
+            n.setText(f[1]); n.setTextSize(15); n.setTextColor(col(R.color.c_text)); n.setTypeface(fontTf(f[0], on));
             LinearLayout.LayoutParams nl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
             nl.setMarginStart(dp(12)); r.addView(n, nl);
             TextView sm = new TextView(this);
-            sm.setText(SAMPLE); sm.setTextSize(19); sm.setTextColor(Color.parseColor("#0B3F36")); sm.setTypeface(fontTf(f[0], false));
+            sm.setText(SAMPLE); sm.setTextSize(19); sm.setTextColor(col(R.color.c_head)); sm.setTypeface(fontTf(f[0], false));
             r.addView(sm);
             r.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
@@ -753,7 +883,11 @@ public class MainActivity extends Activity {
     void setFontList(boolean open) {
         findViewById(R.id.font_list).setVisibility(open ? View.VISIBLE : View.GONE);
         findViewById(R.id.font_box).setBackgroundResource(open ? R.drawable.dd_open : R.drawable.grp);
-        ((TextView) findViewById(R.id.font_arrow)).setText(open ? "▴" : "▾");
+        TextView ar = (TextView) findViewById(R.id.font_arrow);
+        android.graphics.drawable.Drawable dd = getDrawable(R.drawable.ic_down_s).mutate();
+        dd.setTint(col(R.color.c_mut)); dd.setBounds(0, 0, dp(18), dp(18));
+        ar.setCompoundDrawablesRelative(dd, null, null, null);
+        ar.setRotation(open ? 180 : 0);
     }
 
     void fillSeg() {
@@ -762,7 +896,7 @@ public class MainActivity extends Activity {
         for (TextView t : new TextView[]{a, b}) {
             boolean on = (t == b) == ref;
             t.setBackgroundResource(on ? R.drawable.seg_on : 0);
-            t.setTextColor(Color.parseColor(on ? "#0B3F36" : "#55625D"));
+            t.setTextColor(col(on ? R.color.c_head : R.color.c_mut));
             t.setTypeface(on ? bold : reg);
         }
     }

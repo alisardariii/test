@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="c_text">#E9EFEC</color>
+    <color name="c_head">#F2F6F4</color>
+    <color name="c_acc">#7FD6B4</color>
+    <color name="c_mut">#8D9A95</color>
+    <color name="c_text2">#A9B5B0</color>
+    <color name="c_hint">#6F7C77</color>
+    <color name="c_chev">#5C6864</color>
+    <color name="c_line">#12FFFFFF</color>
+    <color name="c_gl1">#17FFFFFF</color>
+    <color name="c_gl2">#0AFFFFFF</color>
+    <color name="c_rim">#24FFFFFF</color>
+    <color name="c_press">#14FFFFFF</color>
+    <color name="c_on">#29F2C46B</color>
+    <color name="c_seg">#0DFFFFFF</color>
+    <color name="c_segon">#24FFFFFF</color>
+    <color name="c_segrim">#1FFFFFFF</color>
+    <color name="c_icobg">#1A7FD6B4</color>
+    <color name="c_field">#12FFFFFF</color>
+    <color name="c_fieldrim">#24FFFFFF</color>
+    <color name="c_okbg">#1F7FD6B4</color>
+    <color name="c_okfg">#7FD6B4</color>
+    <color name="c_badbg">#29FF6B5B</color>
+    <color name="c_badfg">#FF8A7D</color>
+    <color name="c_swoff">#3A4542</color>
+    <color name="c_bar">#141918</color>
+</resources>
