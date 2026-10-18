@@ -55,7 +55,17 @@ public class MainCard {
     static String fa(long n) { return LiveWidget.sep(n); }
 
     /** W و H به پیکسل */
+    /** حاشیه‌ی داخلی دور همه‌ی خط‌ها تا متن به لبه‌ی کادر نچسبد */
     static Bitmap draw(Context ctx, String font, String name, JSONObject x, boolean off, String at, boolean hidden, int W, int H, float d) {
+        int px = Math.round(W * 0.075f), py = Math.round(H * 0.07f);
+        Bitmap in = drawInner(ctx, font, name, x, off, at, hidden, Math.max(1, W - 2 * px), Math.max(1, H - 2 * py), d);
+        Bitmap bm = Bitmap.createBitmap(Math.max(1, W), Math.max(1, H), Bitmap.Config.ARGB_8888);
+        new Canvas(bm).drawBitmap(in, px, py, null);
+        in.recycle();
+        return bm;
+    }
+
+    static Bitmap drawInner(Context ctx, String font, String name, JSONObject x, boolean off, String at, boolean hidden, int W, int H, float d) {
         List<Line> L = new ArrayList<>();
         String orders = x == null ? "" : x.optString("orders_t", "");
         Line t = new Line(); t.a = name + (orders.isEmpty() ? "" : "  |  " + orders + " فیش"); t.ca = GOLD; t.bold = true;
