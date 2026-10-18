@@ -153,6 +153,14 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
             <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="فونت ویجت" android:textColor="#0B3F36" android:textSize="17sp" />
+            <RadioGroup android:id="@+id/fonts" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="هر گزینه با همان فونت نوشته شده است. انتخاب شما همان لحظه روی ویجت اعمال می‌شود."
+                android:textColor="#93A099" android:textSize="12sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/card" android:padding="18dp" android:layout_marginTop="14dp">
+            <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="به‌روزرسانی برنامه" android:textColor="#0B3F36" android:textSize="17sp" />
             <TextView android:id="@+id/ver" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="4dp" android:textColor="#5B6A64" android:textSize="13sp" />

@@ -148,6 +148,7 @@ public class MainActivity extends Activity {
 
         setupUpdate();
         applyFont(findViewById(R.id.page));
+        fillFonts();
         refreshAll(false);
     }
 
@@ -487,6 +488,36 @@ public class MainActivity extends Activity {
         if (st > 0) { res.setBackgroundResource(R.drawable.chip_ok); res.setTextColor(Color.parseColor("#0F5C4D")); }
         else if (st < 0) { res.setBackgroundResource(R.drawable.chip_bad); res.setTextColor(Color.parseColor("#B03A2E")); }
         else { res.setBackgroundResource(R.drawable.field); res.setTextColor(Color.parseColor("#5B6A64")); }
+    }
+
+    // ───── فونت ویجت ─────
+    void fillFonts() {
+        RadioGroup g = (RadioGroup) findViewById(R.id.fonts);
+        g.setOnCheckedChangeListener(null);
+        g.removeAllViews();
+        String cur = Fonts.current(this);
+        for (int i = 0; i < Fonts.LIST.length; i++) {
+            String[] f = Fonts.LIST[i];
+            RadioButton r = new RadioButton(this);
+            r.setId(5000 + i);
+            r.setText(f[1] + "  —  ۱۵۴٬۹۴۶٬۹۲۴ تومان");
+            r.setTextSize(16); r.setTextColor(Color.parseColor("#1D2B27"));
+            r.setButtonTintList(ColorStateList.valueOf(Color.parseColor("#E3A12F")));
+            r.setPadding(dp(4), dp(10), dp(4), dp(10));
+            Typeface tf = Fonts.get(this, f[0], false);
+            r.setTypeface(tf == null ? Typeface.DEFAULT : tf);
+            g.addView(r, new RadioGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            if (f[0].equals(cur)) r.setChecked(true);
+        }
+        g.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            public void onCheckedChanged(RadioGroup gr, int id) {
+                int i = id - 5000;
+                if (i < 0 || i >= Fonts.LIST.length) return;
+                p.edit().putString("font", Fonts.LIST[i][0]).apply();
+                Toast.makeText(MainActivity.this, "فونت «" + Fonts.LIST[i][1] + "» روی ویجت گذاشته شد", Toast.LENGTH_SHORT).show();
+                new Thread(new Runnable() { public void run() { LiveWidget.render(getApplicationContext()); } }).start();
+            }
+        });
     }
 
     void applyFont(View v) {

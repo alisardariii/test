@@ -165,6 +165,8 @@ public class LiveWidget extends AppWidgetProvider {
         if (h <= 0) h = 150;
         int shape = w >= h * 1.45f ? 1 : (h >= w * 1.35f ? 2 : 0);
         RemoteViews v = new RemoteViews(ctx.getPackageName(), shape == 1 ? R.layout.widget_wide : R.layout.widget);
+        java.util.HashMap<Integer, String> tx = new java.util.HashMap<>();
+        java.util.HashMap<Integer, Float> sz = new java.util.HashMap<>();
         v.setViewVisibility(R.id.extra, shape == 0 ? View.GONE : View.VISIBLE);
 
         SharedPreferences p = ctx.getSharedPreferences(PREFS, 0);
@@ -176,19 +178,19 @@ public class LiveWidget extends AppWidgetProvider {
         float d = ctx.getResources().getDisplayMetrics().density;
         v.setInt(R.id.bgfill, "setColorFilter", tableColor(0));
         String name = site != null && site.name != null && !site.name.isEmpty() ? site.name : "رادرس";
-        v.setTextViewText(R.id.title, "‏" + name);
-        if (site == null) v.setTextViewText(R.id.info, "برای تنظیم، اپ «رادرس» را باز کنید");
+        tt(v, tx, R.id.title, "‏" + name);
+        if (site == null) tt(v, tx, R.id.info, "برای تنظیم، اپ «رادرس» را باز کنید");
         if (last != null) {
             try {
                 JSONObject x = new JSONObject(last);
                 if (site != null && (site.name == null || site.name.isEmpty())) name = x.optString("site_name", name);
-                v.setTextViewText(R.id.title, "‏" + name + "‏ · ‏" + x.optString("now_t", ""));
+                tt(v, tx, R.id.title, "‏" + name + "‏ · ‏" + x.optString("now_t", ""));
                 boolean hid = hidden(ctx);
-                v.setTextViewText(R.id.amount, hid ? DOTS : x.optString("today_t", "—"));
-                v.setTextViewText(R.id.pct, "‏" + x.optString("pct_t", ""));
+                tt(v, tx, R.id.amount, hid ? DOTS : x.optString("today_t", "—"));
+                tt(v, tx, R.id.pct, "‏" + x.optString("pct_t", ""));
                 if (!off) v.setInt(R.id.bgfill, "setColorFilter", tableColor(x.optInt("open_now", 0)));
                 String R2 = "‏";
-                v.setTextViewText(R.id.info, R2 + "فیش " + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز باز " + x.optString("open_t", "") + R2);
+                tt(v, tx, R.id.info, R2 + "فیش " + x.optString("orders_t", "") + R2 + "  ·  " + R2 + "میز باز " + x.optString("open_t", "") + R2);
                 JSONObject best = null;
                 JSONArray open = x.optJSONArray("open");
                 if (open != null) for (int k = 0; k < open.length(); k++) {
@@ -197,12 +199,12 @@ public class LiveWidget extends AppWidgetProvider {
                     if (best == null || t.optInt("minutes") > best.optInt("minutes")) best = t;
                 }
                 if (best != null) {
-                    v.setTextViewText(R.id.t_place, "‏" + fa(best.optString("place", "")));
-                    v.setTextViewText(R.id.t_min, "‏⏱ " + fa(String.valueOf(best.optInt("minutes"))) + " دقیقه");
-                    v.setTextViewText(R.id.t_amt, "‏" + (hid ? DOTS : sep(Math.round(best.optDouble("amount", 0) / 10))) + " تومان");
+                    tt(v, tx, R.id.t_place, "‏" + fa(best.optString("place", "")));
+                    tt(v, tx, R.id.t_min, "‏⏱ " + fa(String.valueOf(best.optInt("minutes"))) + " دقیقه");
+                    tt(v, tx, R.id.t_amt, "‏" + (hid ? DOTS : sep(Math.round(best.optDouble("amount", 0) / 10))) + " تومان");
                 } else {
-                    v.setTextViewText(R.id.t_place, "میز بازی نیست");
-                    v.setTextViewText(R.id.t_min, ""); v.setTextViewText(R.id.t_amt, "");
+                    tt(v, tx, R.id.t_place, "میز بازی نیست");
+                    tt(v, tx, R.id.t_min, ""); tt(v, tx, R.id.t_amt, "");
                 }
                 if (shape != 0) {
                     int cw = (int) ((shape == 1 ? w * 0.40f : w * 0.48f) * d), ch = (int) ((shape == 1 ? h * 0.40f : h * 0.30f) * d);
@@ -214,7 +216,7 @@ public class LiveWidget extends AppWidgetProvider {
         if (off) v.setInt(R.id.bgfill, "setColorFilter", 0x40FFFFFF); // شیشه‌ای وقتی ارتباط قطع است
         v.setViewVisibility(R.id.offline, off ? View.VISIBLE : View.GONE);
         String at = p.getString("last_at_" + si, "");
-        v.setTextViewText(R.id.status, off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at)));
+        tt(v, tx, R.id.status, off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at)));
 
         String u = site == null ? "" : Sites.jsonUrl(site.url);
         Intent openI = u.isEmpty() ? new Intent(ctx, MainActivity.class) : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
@@ -233,24 +235,71 @@ public class LiveWidget extends AppWidgetProvider {
         float s = Math.max(0.8f, Math.min(5f, Math.min(mw / 175f, mh / 185f)));
         int U = TypedValue.COMPLEX_UNIT_DIP;
         v.setTextViewTextSize(R.id.refresh, U, 15f * s);
-        v.setTextViewTextSize(R.id.title, U, 11f * s);
-        v.setTextViewTextSize(R.id.amount, U, Math.min(24f * s, (mw - 36f * Math.min(s, 3f)) / 6.8f));
-        v.setTextViewTextSize(R.id.unit, U, 10f * s);
-        v.setTextViewTextSize(R.id.pct, U, 11f * s);
-        v.setTextViewTextSize(R.id.info, U, 11f * s);
-        v.setTextViewTextSize(R.id.status, U, 9f * s);
+        ts(v, sz, R.id.title, 11f * s);
+        ts(v, sz, R.id.amount, Math.min(24f * s, (mw - 36f * Math.min(s, 3f)) / 6.8f));
+        ts(v, sz, R.id.unit, 10f * s);
+        ts(v, sz, R.id.pct, 11f * s);
+        ts(v, sz, R.id.info, 11f * s);
+        ts(v, sz, R.id.status, 9f * s);
         v.setTextViewTextSize(R.id.offline, U, 10f * s);
         float tw = shape == 1 ? w * 0.42f : w * 0.5f, th = shape == 1 ? h * 0.5f : h * 0.38f;
         float ts = Math.max(0.7f, Math.min(4f, Math.min(tw / 150f, th / 125f)));
-        v.setTextViewTextSize(R.id.t_title, U, 10f * ts);
-        v.setTextViewTextSize(R.id.t_place, U, 18f * ts);
-        v.setTextViewTextSize(R.id.t_min, U, 13f * ts);
-        v.setTextViewTextSize(R.id.t_amt, U, 10f * ts);
+        ts(v, sz, R.id.t_title, 10f * ts);
+        ts(v, sz, R.id.t_place, 18f * ts);
+        ts(v, sz, R.id.t_min, 13f * ts);
+        ts(v, sz, R.id.t_amt, 10f * ts);
         int pad = (int) (6f * Math.min(s, 3f) * d), bp = (int) (8f * Math.min(s, 3f) * d);
         v.setViewPadding(R.id.content, pad, pad, pad, pad);
         v.setViewPadding(R.id.blk_main, bp, bp, bp, bp);
         v.setViewPadding(R.id.blk_tbl, bp, bp, bp, bp);
+        applyFont(ctx, v, tx, sz, shape, w, s, pad, bp, d);
         return v;
+    }
+
+
+    static void tt(RemoteViews v, java.util.Map<Integer, String> tx, int id, CharSequence t) { tx.put(id, t.toString()); v.setTextViewText(id, t); }
+    static void ts(RemoteViews v, java.util.Map<Integer, Float> sz, int id, float dip) { sz.put(id, dip); v.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_DIP, dip); }
+
+    // id متن، id تصویرش، رنگ، پررنگ، وسط‌چین، حداکثر خط، متن پیش‌فرض
+    static final Object[][] TXT = {
+            {R.id.title, R.id.title_img, 0xFFFFE3A0, true, false, 1, "هفت‌خوان"},
+            {R.id.amount, R.id.amount_img, 0xFFFFFFFF, true, false, 1, "—"},
+            {R.id.unit, R.id.unit_img, 0xFFE6EEEA, false, false, 1, "تومان"},
+            {R.id.pct, R.id.pct_img, 0xFFFFFFFF, false, false, 2, ""},
+            {R.id.info, R.id.info_img, 0xFFE6EEEA, false, false, 2, ""},
+            {R.id.status, R.id.status_img, 0xFFC9D6D0, false, false, 1, ""},
+            {R.id.t_title, R.id.t_title_img, 0xFFFFE3A0, true, true, 1, "قدیمی‌ترین میز باز"},
+            {R.id.t_place, R.id.t_place_img, 0xFFFFFFFF, true, true, 1, "—"},
+            {R.id.t_min, R.id.t_min_img, 0xFFFFFFFF, false, true, 1, ""},
+            {R.id.t_amt, R.id.t_amt_img, 0xFFE6EEEA, false, true, 1, ""},
+    };
+
+    /** اگر فونتی غیر از پیش‌فرض گوشی انتخاب شده، متن‌ها را با همان فونت به تصویر تبدیل کن */
+    static void applyFont(Context ctx, RemoteViews v, java.util.Map<Integer, String> tx, java.util.Map<Integer, Float> sz,
+                          int shape, float w, float s, int pad, int bp, float d) {
+        String key = Fonts.current(ctx);
+        boolean custom = !"system".equals(key) && Fonts.get(ctx, key, false) != null;
+        float padDp = pad / d, bpDp = bp / d;
+        float mainW = (shape == 1 ? w * 1.35f / 2.35f - 4f : w) - 2 * padDp - 2 * bpDp;
+        float tblW = (shape == 1 ? w / 2.35f - 4f - 2 * padDp - 2 * bpDp : (w - 2 * padDp - 8f) / 2f - 2 * bpDp);
+        for (Object[] t : TXT) {
+            int id = (Integer) t[0], img = (Integer) t[1];
+            String text = tx.containsKey(id) ? tx.get(id) : (String) t[6];
+            if (!custom || text == null || text.replace("\u200f", "").trim().isEmpty()) {
+                v.setViewVisibility(img, View.GONE); v.setViewVisibility(id, View.VISIBLE); continue;
+            }
+            boolean inTbl = id == R.id.t_title || id == R.id.t_place || id == R.id.t_min || id == R.id.t_amt;
+            float wd = inTbl ? tblW : (id == R.id.title ? mainW - 26f * Math.min(s, 3f) : mainW);
+            Float size = sz.get(id);
+            try {
+                Bitmap bm = Fonts.text(ctx, key, text, size == null ? 12f : size, (Integer) t[2], (Boolean) t[3], (Boolean) t[4],
+                        (Integer) t[5], Math.max(40f, wd), d);
+                v.setImageViewBitmap(img, bm);
+                v.setViewVisibility(img, View.VISIBLE); v.setViewVisibility(id, View.GONE);
+            } catch (Throwable e) {
+                v.setViewVisibility(img, View.GONE); v.setViewVisibility(id, View.VISIBLE);
+            }
+        }
     }
 
     /** نمودار کوچک فروش امروز (طلایی) در برابر هفته‌ی قبل (خط‌چین) */
