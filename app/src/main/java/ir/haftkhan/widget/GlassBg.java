@@ -7,25 +7,38 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 
-/** زمینه‌ی صفحه: گرادیانت ملایم با سه هاله‌ی کم‌رنگ (هلویی، نعنایی، یاسی) */
+/** زمینه‌ی صفحه: یک‌رنگِ ملایم با یک هاله‌ی خیلی کم‌رنگ نعنایی در گوشه‌ی بالا. wall=true: والپیپر نمونه برای پیش‌نمایش ویجت */
 public class GlassBg extends Drawable {
-    final boolean dark;
+    final boolean dark, wall;
+    final float radius;
     final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
 
-    GlassBg(boolean dark) { this.dark = dark; }
+    GlassBg(boolean dark) { this(dark, false, 0); }
+    GlassBg(boolean dark, boolean wall, float radius) { this.dark = dark; this.wall = wall; this.radius = radius; }
 
     @Override public void draw(Canvas c) {
         Rect b = getBounds();
         float w = b.width(), h = b.height();
-        int[] base = dark ? new int[]{0xFF161B1A, 0xFF121716, 0xFF14171C} : new int[]{0xFFF7F3EC, 0xFFEEF3F0, 0xFFEEF0F6};
-        p.setShader(new LinearGradient(0, 0, w * 0.1f, h, base, new float[]{0, 0.55f, 1}, Shader.TileMode.CLAMP));
+        if (wall) {
+            c.save();
+            android.graphics.Path clip = new android.graphics.Path();
+            clip.addRoundRect(new RectF(b), radius, radius, android.graphics.Path.Direction.CW);
+            c.clipPath(clip);
+            p.setShader(new LinearGradient(0, 0, w, h, 0xFF2A1F5C, 0xFF14304A, Shader.TileMode.CLAMP));
+            c.drawRect(b, p);
+            blob(c, w * 0.15f, h * 0.2f, Math.max(w, h) * 0.45f, 0xFFFF9F6B);
+            blob(c, w * 0.85f, h * 0.3f, Math.max(w, h) * 0.5f, 0xFF6B8BFF);
+            blob(c, w * 0.5f, h * 1.05f, Math.max(w, h) * 0.5f, 0xFF3FD3A0);
+            c.restore();
+            return;
+        }
+        p.setShader(new LinearGradient(0, 0, 0, h, dark ? 0xFF171C1B : 0xFFF8FAF8, dark ? 0xFF121615 : 0xFFF1F4F2, Shader.TileMode.CLAMP));
         c.drawRect(b, p);
-        blob(c, w * 0.95f, 0, Math.max(w, h) * 0.55f, dark ? 0x1AF2C46B : 0xFFFBE7C6);
-        blob(c, 0, h * 0.40f, Math.max(w, h) * 0.55f, dark ? 0x1A5ABE96 : 0xFFD3EEE3);
-        blob(c, w, h, Math.max(w, h) * 0.6f, dark ? 0x1A788CE6 : 0xFFDCE3F7);
+        blob(c, w, 0, Math.max(w, h) * 0.6f, dark ? 0x167FD6B4 : 0xFFE2F2EB);
     }
 
     void blob(Canvas c, float x, float y, float r, int color) {
@@ -35,5 +48,5 @@ public class GlassBg extends Drawable {
 
     @Override public void setAlpha(int a) {}
     @Override public void setColorFilter(ColorFilter f) {}
-    @Override public int getOpacity() { return PixelFormat.OPAQUE; }
+    @Override public int getOpacity() { return wall ? PixelFormat.TRANSLUCENT : PixelFormat.OPAQUE; }
 }

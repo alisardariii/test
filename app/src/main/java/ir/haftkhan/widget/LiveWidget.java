@@ -47,6 +47,14 @@ public class LiveWidget extends AppWidgetProvider {
     static final String DOTS = "••••••";
 
     /** حالت مخفی روشن است و الان مبلغ‌ها نباید دیده شوند؟ */
+    /** شفافیت پس‌زمینه: نوار ۰ تا ۱۰۰۰ ← ۱۵٪ تا ۱۰۰٪ کدری */
+    static final int ALPHA_DEF = 553;
+    static float glassFrac(Context ctx) {
+        int v = ctx.getSharedPreferences(PREFS, 0).getInt("alpha", ALPHA_DEF);
+        return 0.15f + 0.85f * Math.max(0, Math.min(1000, v)) / 1000f;
+    }
+    static int glassAlpha(Context ctx) { return Math.round(255 * glassFrac(ctx)); }
+
     static boolean hidden(Context ctx) {
         SharedPreferences p = ctx.getSharedPreferences(PREFS, 0);
         return p.getBoolean("privacy", false) && System.currentTimeMillis() > p.getLong("reveal_until", 0);
@@ -214,7 +222,7 @@ public class LiveWidget extends AppWidgetProvider {
             } catch (Exception ignored) {}
         }
         if (off) v.setInt(R.id.bgfill, "setColorFilter", 0xFF5E6865); // خاکستری وقتی ارتباط قطع است
-        v.setInt(R.id.bgfill, "setImageAlpha", 158);                       // شیشه‌ی نیمه‌شفاف؛ والپیپر از پشت پیداست
+        v.setInt(R.id.bgfill, "setImageAlpha", glassAlpha(ctx));            // شیشه‌ی نیمه‌شفاف؛ میزانش از «ظاهر»
         v.setViewVisibility(R.id.offline, off ? View.VISIBLE : View.GONE);
         String at = p.getString("last_at_" + si, "");
         tt(v, tx, R.id.status, off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at)));

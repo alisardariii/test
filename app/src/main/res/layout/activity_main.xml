@@ -54,6 +54,9 @@
                 android:gravity="center_vertical" android:padding="14dp" android:background="@drawable/rowsel" android:clickable="true" android:focusable="true">
                 <TextView android:id="@+id/row_log_t" android:tag="b" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
                     android:text="همه‌ی هشدارها" android:textColor="@color/c_acc" android:textSize="14sp" />
+                <TextView android:id="@+id/row_log_n" android:tag="b" android:layout_width="wrap_content" android:layout_height="22dp" android:minWidth="22dp"
+                    android:gravity="center" android:background="@drawable/cnt" android:paddingLeft="7dp" android:paddingRight="7dp"
+                    android:textColor="#FFFFFF" android:textSize="12sp" android:layout_marginEnd="10dp" android:visibility="gone" />
                 <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_chev" android:tint="@color/c_chev" />
             </LinearLayout>
         </LinearLayout>
@@ -169,9 +172,20 @@
             android:background="@drawable/seg_bg" android:padding="4dp" android:layout_marginTop="6dp" android:baselineAligned="false" />
         <TextView android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
             android:layout_marginStart="6dp" android:layout_marginBottom="6dp" android:text="ویجت" android:textColor="@color/c_mut" android:textSize="13sp" />
-        <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/hero" android:padding="16dp">
-            <ImageView android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="170dp" android:scaleType="fitCenter" />
+        <FrameLayout android:id="@+id/wall" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="18dp">
+            <ImageView android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="190dp" android:scaleType="fitCenter" />
         </FrameLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/grp" android:layout_marginTop="14dp" android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingTop="14dp" android:paddingBottom="12dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="شفافیت پس‌زمینه" android:textColor="@color/c_text" android:textSize="15sp" />
+            <SeekBar android:id="@+id/op_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                android:paddingLeft="12dp" android:paddingRight="12dp" android:paddingTop="8dp" android:paddingBottom="8dp"
+                android:thumb="@drawable/sl_thumb" android:splitTrack="false" android:max="1000" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingLeft="8dp" android:paddingRight="8dp">
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="شفاف" android:textColor="@color/c_mut" android:textSize="12sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="کدر" android:textColor="@color/c_mut" android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
         <LinearLayout android:id="@+id/font_box" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:background="@drawable/grp" android:layout_marginTop="14dp">
             <LinearLayout android:id="@+id/font_dd" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
@@ -204,31 +218,12 @@
     </LinearLayout>
     </ScrollView>
 
-    <!-- ═════════ به‌روزرسانی ═════════ -->
-    <ScrollView android:id="@+id/pg_update" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
-        <TextView android:tag="hdr" android:text="به‌روزرسانی" android:layout_width="match_parent" android:layout_height="wrap_content" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:background="@drawable/grp" android:padding="18dp">
-            <TextView android:id="@+id/ver2" android:tag="b" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="@color/c_head" android:textSize="16sp" />
-            <TextView android:id="@+id/upd" android:tag="b" android:gravity="center" android:clickable="true" android:focusable="true"
-                android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/btn_ghost"
-                android:text="بررسی نسخه‌ی جدید" android:textColor="@color/c_acc" android:textSize="15sp" android:layout_marginTop="14dp" />
-            <TextView android:id="@+id/updres" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" android:padding="12dp" android:textSize="14sp" android:visibility="gone" />
-        </LinearLayout>
-    </LinearLayout>
-    </ScrollView>
-
     <!-- ═════════ راهنما ═════════ -->
     <ScrollView android:id="@+id/pg_guide" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:visibility="gone">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
         android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="20dp">
-        <TextView android:tag="hdr" android:text="راهنمای نصب ویجت" android:layout_width="match_parent" android:layout_height="wrap_content" />
-        <LinearLayout android:id="@+id/steps" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:background="@drawable/grp" android:padding="16dp" />
+        <TextView android:tag="hdr" android:text="راه‌اندازی ویجت" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <LinearLayout android:id="@+id/guide_box" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
     </LinearLayout>
     </ScrollView>
 </FrameLayout>

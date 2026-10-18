@@ -25,4 +25,7 @@
     <color name="c_badfg">#FF8A7D</color>
     <color name="c_swoff">#3A4542</color>
     <color name="c_bar">#141918</color>
+    <color name="c_sheet">#FA1B2220</color>
+    <color name="c_halo">#1F7FD6B4</color>
+    <color name="c_halo2">#337FD6B4</color>
 </resources>

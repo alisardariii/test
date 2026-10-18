@@ -76,7 +76,7 @@ public class Alerts {
             a.put(new JSONObject().put("t", new SimpleDateFormat("MM/dd HH:mm", Locale.US).format(new Date())).put("title", title).put("text", text).put("k", type));
             JSONArray b = new JSONArray();
             for (int i = Math.max(0, a.length() - 30); i < a.length(); i++) b.put(a.get(i));
-            p.edit().putString("log", b.toString()).apply();
+            p.edit().putString("log", b.toString()).putInt("log_total", p.getInt("log_total", 0) + 1).apply();
         } catch (Exception ignored) {}
     }
 
