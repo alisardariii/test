@@ -194,7 +194,57 @@ public class LiveActivity extends Activity {
     }
 
     // ───── بارگذاری صفحه‌ی سایت ─────
-    boolean kitchen() { return "kitchen".equals(p.getString("tv_go", "live")); }
+    // ───── صفحه‌ها (گزارش زنده، آشپزخانه و هر صفحه‌ای که بعداً در سایت اضافه شود) ─────
+    // فهرست از خود داشبورد می‌آید (/api/app/me)، پس برای صفحه‌ی تازه لازم نیست اپ دوباره ساخته شود.
+    org.json.JSONArray pages() {
+        try { org.json.JSONArray a = new org.json.JSONArray(p.getString("tv_pages", "")); if (a.length() > 0) return a; } catch (Exception ignored) {}
+        org.json.JSONArray a = new org.json.JSONArray();
+        try { a.put(new JSONObject().put("key", "live").put("title", "گزارش زنده")); } catch (Exception ignored) {}
+        return a;
+    }
+
+    int pageIdx() {
+        org.json.JSONArray a = pages(); String k = p.getString("tv_page", "live");
+        for (int i = 0; i < a.length(); i++) if (k.equals(a.optJSONObject(i).optString("key"))) return i;
+        return 0;
+    }
+
+    String pageKey() { return pages().optJSONObject(pageIdx()).optString("key", "live"); }
+
+    void switchPage(int d) {
+        if (!isAccount(siteUrl)) { toast("جابه‌جایی بین صفحه‌ها فقط با ورود حساب کاربری در دسترس است"); return; }
+        org.json.JSONArray a = pages();
+        if (a.length() < 2) { toast("صفحه‌ی دیگری برای این کاربر نیست"); return; }
+        int i = ((pageIdx() + d) % a.length() + a.length()) % a.length();
+        JSONObject o = a.optJSONObject(i);
+        p.edit().putString("tv_page", o.optString("key")).apply();
+        toast(o.optString("title"));
+        load();
+    }
+
+    /** فهرست صفحه‌های مجاز این کاربر را از داشبورد می‌گیرد */
+    void refreshPages() {
+        if (!isAccount(siteUrl)) return;
+        final String b = base(siteUrl), t = token(siteUrl);
+        new Thread(new Runnable() { public void run() {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(b + "/api/app/me").openConnection();
+                c.setConnectTimeout(8000); c.setReadTimeout(10000);
+                c.setRequestProperty("X-Radres-Token", t);
+                if (c.getResponseCode() != 200) return;
+                java.io.InputStream in = c.getInputStream();
+                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[4096]; int n;
+                while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+                in.close();
+                org.json.JSONArray a = new JSONObject(bo.toString("UTF-8")).optJSONArray("pages");
+                if (a != null && a.length() > 0) {
+                    p.edit().putString("tv_pages", a.toString()).apply();
+                    runOnUiThread(new Runnable() { public void run() { fillBar(); } });
+                }
+            } catch (Exception ignored) {}
+        } }).start();
+    }
 
     void load() {
         pageError = false;
@@ -204,12 +254,13 @@ public class LiveActivity extends Activity {
         String b = base(siteUrl), t = token(siteUrl);
         try {
             if (isAccount(siteUrl)) {
-                String body = "t=" + URLEncoder.encode(t, "UTF-8") + "&go=" + (kitchen() ? "kitchen" : "live");
+                String body = "t=" + URLEncoder.encode(t, "UTF-8") + "&go=" + URLEncoder.encode(pageKey(), "UTF-8");
                 web.postUrl(b + "/app/enter", body.getBytes("UTF-8"));
             } else {
                 web.loadUrl(b + "/w/" + t + "?app=1");   // لینک قدیمی ویجت: همان صفحه‌ی گزارش زنده‌ی عمومی
             }
         } catch (Exception e) { offline(); }
+        refreshPages();
         h.removeCallbacks(dailyReload);
         h.postDelayed(dailyReload, 6 * 3600 * 1000L);
         fillBar();
@@ -237,8 +288,7 @@ public class LiveActivity extends Activity {
         rotBtn = barBtn("⟳  چرخش صفحه", new View.OnClickListener() { public void onClick(View v) { rotate(); } });
         barBtn("↻  تازه‌سازی", new View.OnClickListener() { public void onClick(View v) { load(); hideBarSoon(); } });
         modeBtn = barBtn("", new View.OnClickListener() { public void onClick(View v) {
-            if (!isAccount(siteUrl)) { toast("صفحه‌ی آشپزخانه فقط با ورود حساب کاربری در دسترس است"); return; }
-            p.edit().putString("tv_go", kitchen() ? "live" : "kitchen").apply(); load();
+            switchPage(1);
         } });
         if (tv) bootBtn = barBtn("", new View.OnClickListener() { public void onClick(View v) { bootToggle(); } });
         barBtn("⏻  خروج", new View.OnClickListener() { public void onClick(View v) { finish(); } });
@@ -271,7 +321,11 @@ public class LiveActivity extends Activity {
     }
 
     void fillBar() {
-        if (modeBtn != null) modeBtn.setText(kitchen() ? "⇄  گزارش زنده" : "⇄  آشپزخانه");
+        if (modeBtn != null) {
+            org.json.JSONArray a = pages();
+            JSONObject nx = a.optJSONObject((pageIdx() + 1) % Math.max(1, a.length()));
+            modeBtn.setText(a.length() > 1 && nx != null ? "⇄  " + nx.optString("title") : "⇄  صفحه‌ها");
+        }
         if (rotBtn != null) rotBtn.setText("⟳  چرخش (" + LiveWidget.fa(String.valueOf(p.getInt("tv_rot", 0))) + "°)");
         if (bootBtn != null) bootBtn.setText(p.getBoolean("tv_boot", true) ? "✓  باز شدن خودکار" : "○  باز شدن خودکار");
     }
@@ -301,9 +355,12 @@ public class LiveActivity extends Activity {
             if (tv) { showBar(); toast("برای بیرون رفتن «خروج» را بزنید"); return true; }
             return super.onKeyDown(code, e);
         }
+        // چپ و راست ریموت (وقتی نوار بسته است): صفحه‌ی قبلی / بعدی
+        if (!open && (code == KeyEvent.KEYCODE_DPAD_RIGHT || code == KeyEvent.KEYCODE_DPAD_LEFT)) {
+            switchPage(code == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1); return true;
+        }
         if (!open && (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_MENU
-                || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
-                || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+                || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN)) {
             if (tv || code == KeyEvent.KEYCODE_MENU) { showBar(); return true; }
         }
         if (open) hideBarSoon();
@@ -436,7 +493,7 @@ public class LiveActivity extends Activity {
     }
 
     void onLoggedIn(String b, String user, JSONObject x) {
-        p.edit().putString("last_base", b).putString("last_user", user).apply();
+        p.edit().putString("last_base", b).putString("last_user", user).remove("tv_pages").apply();
         String url = b + "/a/" + x.optString("token");
         String name = x.optString("site_name", "مجموعه");
         List<Sites.Site> l = Sites.all(this);
