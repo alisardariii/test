@@ -497,7 +497,7 @@ public class LiveActivity extends Activity {
         lp.width = side ? H : W; lp.height = side ? W : H;
         lp.gravity = Gravity.TOP | Gravity.LEFT;   // برنامه راست‌به‌چپ است؛ بدون این، کادر چرخیده از سمت راست شروع می‌شد و از صفحه بیرون می‌زد
         // حاشیه‌ی امن تلویزیون (overscan): لبه‌های تصویر در بعضی تلویزیون‌ها بیرون از قاب می‌افتد
-        int mx = tv ? Math.round(W * 0.035f) : 0, my = tv ? Math.round(H * 0.045f) : 0;
+        int mx = 0, my = 0;   // فاصله از لبه‌ها را خود صفحه‌ی سایت می‌دهد (حالت اپ)، نه کوچک کردن کل تصویر
         FrameLayout.LayoutParams wl = (FrameLayout.LayoutParams) web.getLayoutParams();
         if (side) wl.setMargins(my, mx, my, mx); else wl.setMargins(mx, my, mx, my);
         web.setLayoutParams(wl);
