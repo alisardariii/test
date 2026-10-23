@@ -287,6 +287,7 @@ public class LiveActivity extends Activity {
         bar.setBackground(round(Color.parseColor("#E00F1916"), dp(20)));
         rotBtn = barBtn("⟳  چرخش صفحه", new View.OnClickListener() { public void onClick(View v) { rotate(); } });
         barBtn("↻  تازه‌سازی", new View.OnClickListener() { public void onClick(View v) { load(); hideBarSoon(); } });
+        barBtn("◐  تیره / روشن", new View.OnClickListener() { public void onClick(View v) { toggleTheme(); hideBarSoon(); } });
         modeBtn = barBtn("", new View.OnClickListener() { public void onClick(View v) {
             switchPage(1);
         } });
@@ -367,6 +368,14 @@ public class LiveActivity extends Activity {
         return super.onKeyDown(code, e);
     }
 
+    /** تم صفحه (همان تنظیم «ظاهر» سایت) بین روشن و تیره عوض می‌شود */
+    void toggleTheme() {
+        String js = "(function(){var K='hk_glass',s={};try{s=JSON.parse(localStorage.getItem(K)||'{}')||{};}catch(e){}"
+                + "var d=document.documentElement.getAttribute('data-gt')==='dark';s.t=d?'light':'dark';"
+                + "try{localStorage.setItem(K,JSON.stringify(s));}catch(e){}location.reload();})()";
+        try { web.evaluateJavascript(js, null); } catch (Exception ignored) {}
+    }
+
     // ───── چرخش ─────
     void rotate() {
         int r = (p.getInt("tv_rot", 0) + 90) % 360;
@@ -385,6 +394,10 @@ public class LiveActivity extends Activity {
         rot.setRotation(r);
         rot.setTranslationX(side ? (W - H) / 2f : 0);
         rot.setTranslationY(side ? (H - W) / 2f : 0);
+        // مرورگر داخلی بعضی تلویزیون‌ها وقتی چرخانده شود فقط تکه‌ای از صفحه را می‌کشد؛
+        // در حالت چرخیده، صفحه به‌صورت نرم‌افزاری و کامل کشیده می‌شود
+        web.setLayerType(r == 0 ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
+        web.requestLayout(); web.invalidate();
     }
 
     // ───── باز شدن خودکار بعد از روشن شدن تلویزیون ─────
