@@ -55,7 +55,32 @@ public class LiveActivity extends Activity {
     FrameLayout root, rot;
     WebView web;
     LinearLayout bar, loginBox;
-    TextView msg, rotBtn, modeBtn, bootBtn, menuBtn;
+    TextView msg, rotBtn, modeBtn, bootBtn, menuBtn, updBtn;
+    String newApk = null, newName = "";
+    final java.util.List<TextView> btns = new java.util.ArrayList<>();
+    int barRows = 0;
+
+    /** دکمه‌ها را در یک ردیف (افقی) یا دو ردیف (عمودی) می‌چیند */
+    void layoutBar(boolean side) {
+        int rows = side ? 2 : 1;
+        if (rows == barRows) return;
+        barRows = rows;
+        bar.removeAllViews();
+        int per = (btns.size() + rows - 1) / rows;
+        for (int r = 0; r < rows; r++) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER);
+            for (int i = r * per; i < Math.min(btns.size(), (r + 1) * per); i++) {
+                TextView b = btns.get(i);
+                if (b.getParent() != null) ((ViewGroup) b.getParent()).removeView(b);
+                row.addView(b);
+            }
+            LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (r > 0) rl.topMargin = dp(8);
+            bar.addView(row, rl);
+        }
+    }
+    boolean downloading = false;
     final Handler h = new Handler(Looper.getMainLooper());
     String siteUrl;
     boolean tv, loginOnly, pageError;
@@ -261,6 +286,7 @@ public class LiveActivity extends Activity {
             }
         } catch (Exception e) { offline(); }
         refreshPages();
+        if (newApk == null && !downloading) checkUpdate(false);
         h.removeCallbacks(dailyReload);
         h.postDelayed(dailyReload, 6 * 3600 * 1000L);
         fillBar();
@@ -281,7 +307,7 @@ public class LiveActivity extends Activity {
     // ───── نوار پایین (ریموت: OK برای باز و بسته کردن) ─────
     void buildBar() {
         bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setOrientation(LinearLayout.VERTICAL);   // یک یا دو ردیف دکمه (در حالت عمودی جا نمی‌شوند)
         bar.setGravity(Gravity.CENTER);
         bar.setPadding(dp(10), dp(10), dp(10), dp(10));
         bar.setBackground(round(Color.parseColor("#E00F1916"), dp(20)));
@@ -292,19 +318,21 @@ public class LiveActivity extends Activity {
             switchPage(1);
         } });
         if (tv) bootBtn = barBtn("", new View.OnClickListener() { public void onClick(View v) { bootToggle(); } });
+        updBtn = barBtn("⭳  به‌روزرسانی", new View.OnClickListener() { public void onClick(View v) { updateTap(); } });
         barBtn("⏻  خروج", new View.OnClickListener() { public void onClick(View v) { finish(); } });
         FrameLayout.LayoutParams bl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         bl.bottomMargin = dp(tv ? 28 : 18);
         rot.addView(bar, bl);
+        layoutBar(false);
         bar.setVisibility(View.GONE);
         fillBar();
     }
 
     TextView barBtn(String t, View.OnClickListener l) {
-        TextView b = text(t, tv ? 20 : 15, false);
+        TextView b = text(t, tv ? 17 : 14, false);
         b.setTextColor(Color.parseColor("#E9EFEC"));
-        b.setPadding(dp(tv ? 22 : 14), dp(tv ? 12 : 9), dp(tv ? 22 : 14), dp(tv ? 12 : 9));
+        b.setPadding(dp(tv ? 16 : 12), dp(tv ? 11 : 9), dp(tv ? 16 : 12), dp(tv ? 11 : 9));
         StateListDrawable sd = new StateListDrawable();
         sd.addState(new int[]{android.R.attr.state_focused}, round(Color.parseColor("#F2C46B"), dp(14)));
         sd.addState(new int[]{android.R.attr.state_pressed}, round(Color.parseColor("#F2C46B"), dp(14)));
@@ -317,7 +345,8 @@ public class LiveActivity extends Activity {
         b.setOnClickListener(l);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(dp(5), 0, dp(5), 0);
-        bar.addView(b, lp);
+        b.setLayoutParams(lp);
+        btns.add(b);
         return b;
     }
 
@@ -338,7 +367,7 @@ public class LiveActivity extends Activity {
         fillBar();
         bar.setVisibility(View.VISIBLE); bar.setAlpha(0f); bar.animate().alpha(1f).setDuration(180).start();
         bar.bringToFront();
-        if (tv && bar.getChildCount() > 0) bar.getChildAt(0).requestFocus();
+        if (tv && !btns.isEmpty()) btns.get(0).requestFocus();
         hideBarSoon();
     }
 
@@ -368,6 +397,82 @@ public class LiveActivity extends Activity {
         return super.onKeyDown(code, e);
     }
 
+    // ───── به‌روزرسانی از همان نوار (روی تلویزیون صفحه‌ی تنظیمات برنامه در دسترس نیست) ─────
+    int myCode() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode; } catch (Exception e) { return 0; }
+    }
+
+    /** بی‌صدا بررسی می‌کند نسخه‌ی تازه روی داشبورد هست یا نه؛ اگر بود، روی دکمه نوشته می‌شود */
+    void checkUpdate(final boolean loud) {
+        final String b = base(siteUrl);
+        if (b.isEmpty()) return;
+        new Thread(new Runnable() { public void run() {
+            try {
+                JSONObject j = new JSONObject(LiveWidget.fetch(b + "/static/app/version.json"));
+                final int code = j.optInt("versionCode", 0);
+                final String nm = j.optString("versionName", "");
+                final String apk = b + "/static/app/" + j.optString("file", "radres.apk");
+                runOnUiThread(new Runnable() { public void run() {
+                    if (code > myCode()) {
+                        newApk = apk; newName = nm;
+                        updBtn.setText("⭳  نسخه‌ی " + LiveWidget.fa(nm).replace('.', '٫') + " آماده است");
+                        if (loud) download();
+                    } else {
+                        newApk = null; updBtn.setText("⭳  به‌روزرسانی");
+                        if (loud) toast("برنامه به‌روز است");
+                    }
+                } });
+            } catch (Exception e) {
+                if (loud) runOnUiThread(new Runnable() { public void run() { toast("بررسی انجام نشد؛ ارتباط با داشبورد را چک کنید"); } });
+            }
+        } }).start();
+    }
+
+    void updateTap() {
+        if (downloading) return;
+        if (newApk == null) { toast("در حال بررسی…"); checkUpdate(true); } else download();
+    }
+
+    void download() {
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            toast("یک بار اجازه‌ی «نصب برنامه‌های ناشناس» را برای رادرس روشن کنید و برگردید.");
+            try { startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()))); } catch (Exception ignored) {}
+            return;
+        }
+        downloading = true;
+        final String apk = newApk;
+        updBtn.setText("⭳  در حال دانلود…");
+        new Thread(new Runnable() { public void run() {
+            try {
+                java.io.File f = new java.io.File(getCacheDir(), UpdateProvider.NAME);
+                HttpURLConnection c = (HttpURLConnection) new URL(apk).openConnection();
+                c.setConnectTimeout(15000); c.setReadTimeout(30000);
+                final int total = c.getContentLength();
+                java.io.InputStream in = c.getInputStream();
+                java.io.FileOutputStream out = new java.io.FileOutputStream(f);
+                byte[] buf = new byte[16384]; int n; long got = 0, lastUi = 0;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n); got += n;
+                    if (total > 0 && System.currentTimeMillis() - lastUi > 300) {
+                        lastUi = System.currentTimeMillis();
+                        final int pct = (int) (got * 100 / total);
+                        runOnUiThread(new Runnable() { public void run() { updBtn.setText("⭳  دانلود " + LiveWidget.fa(String.valueOf(pct)) + "٪"); } });
+                    }
+                }
+                out.close(); in.close(); c.disconnect();
+                runOnUiThread(new Runnable() { public void run() {
+                    downloading = false; updBtn.setText("⭳  نصب نسخه‌ی تازه");
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setDataAndType(UpdateProvider.uri(), "application/vnd.android.package-archive");
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try { startActivity(i); } catch (Exception e) { toast("نصب‌کننده‌ی تلویزیون باز نشد"); }
+                } });
+            } catch (Exception e) {
+                runOnUiThread(new Runnable() { public void run() { downloading = false; updBtn.setText("⭳  به‌روزرسانی"); toast("دانلود انجام نشد؛ دوباره امتحان کنید"); } });
+            }
+        } }).start();
+    }
+
     /** تم صفحه (همان تنظیم «ظاهر» سایت) بین روشن و تیره عوض می‌شود */
     void toggleTheme() {
         String js = "(function(){var K='hk_glass',s={};try{s=JSON.parse(localStorage.getItem(K)||'{}')||{};}catch(e){}"
@@ -390,6 +495,16 @@ public class LiveActivity extends Activity {
         boolean side = r == 90 || r == 270;
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) rot.getLayoutParams();
         lp.width = side ? H : W; lp.height = side ? W : H;
+        lp.gravity = Gravity.TOP | Gravity.LEFT;   // برنامه راست‌به‌چپ است؛ بدون این، کادر چرخیده از سمت راست شروع می‌شد و از صفحه بیرون می‌زد
+        // حاشیه‌ی امن تلویزیون (overscan): لبه‌های تصویر در بعضی تلویزیون‌ها بیرون از قاب می‌افتد
+        int mx = tv ? Math.round(W * 0.035f) : 0, my = tv ? Math.round(H * 0.045f) : 0;
+        FrameLayout.LayoutParams wl = (FrameLayout.LayoutParams) web.getLayoutParams();
+        if (side) wl.setMargins(my, mx, my, mx); else wl.setMargins(mx, my, mx, my);
+        web.setLayoutParams(wl);
+        FrameLayout.LayoutParams bl = (FrameLayout.LayoutParams) bar.getLayoutParams();
+        bl.bottomMargin = (side ? mx : my) + dp(tv ? 16 : 18);
+        bar.setLayoutParams(bl);
+        layoutBar(side);
         rot.setLayoutParams(lp);
         rot.setRotation(r);
         rot.setTranslationX(side ? (W - H) / 2f : 0);
