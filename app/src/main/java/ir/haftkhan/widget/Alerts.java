@@ -92,7 +92,7 @@ public class Alerts {
             b = new Notification.Builder(ctx).setPriority(Notification.PRIORITY_HIGH).setDefaults(Notification.DEFAULT_ALL);
         }
         String u = Sites.jsonUrl(url);
-        Intent open = u.isEmpty() ? new Intent(ctx, MainActivity.class) : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
+        Intent open = u.isEmpty() ? new Intent(ctx, MainActivity.class) : LiveActivity.intent(ctx, url);
         open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         b.setSmallIcon(R.drawable.ic_notif).setContentTitle(title).setContentText(text)
                 .setStyle(new Notification.BigTextStyle().bigText(text)).setAutoCancel(true).setColor(0xFF0F5C4D)

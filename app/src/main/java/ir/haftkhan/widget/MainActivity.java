@@ -91,8 +91,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 List<Sites.Site> l = Sites.all(MainActivity.this);
                 if (l.isEmpty()) { go(R.id.pg_sites); return; }
-                String u = Sites.jsonUrl(l.get(0).url);
-                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)))); } catch (Exception ignored) {}
+                startActivity(LiveActivity.intent(MainActivity.this, l.get(0).url));   // همان صفحه‌ی سایت، داخل برنامه
             }
         });
         findViewById(R.id.row_log).setOnClickListener(new View.OnClickListener() {
@@ -308,7 +307,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override protected void onResume() { super.onResume(); permState(); fillHome(); fillLog(); fillMenu(); if (page == R.id.pg_guide) fillGuide(); }
+    @Override protected void onResume() {
+        super.onResume();
+        if (p.getBoolean("sites_changed", false)) { p.edit().remove("sites_changed").apply(); fillSites(); refreshAll(false); }
+        permState(); fillHome(); fillLog(); fillMenu(); if (page == R.id.pg_guide) fillGuide();
+    }
 
     // ───── جابه‌جایی بین صفحه‌ها ─────
     void go(int id) {
@@ -380,6 +383,9 @@ public class MainActivity extends Activity {
         menuRow(m, R.drawable.ic_store, "مجموعه‌ها", ns == 0 ? "هنوز نیست" : LiveWidget.fa(String.valueOf(ns)) + " مجموعه", null, R.id.pg_sites);
         int un = unseen();
         menuRow(m, R.drawable.ic_bell, "هشدارها", null, un > 0 ? LiveWidget.fa(String.valueOf(un)) : null, R.id.pg_alerts);
+        if (ns > 0) actRow(m, R.drawable.ic_ext, "نمایش زنده (تمام‌صفحه)", new Runnable() { public void run() {
+            startActivity(LiveActivity.intent(MainActivity.this, Sites.all(MainActivity.this).get(0).url));
+        } });
         menuRow(m, R.drawable.ic_widget, "ظاهر", null, null, R.id.pg_look);
         updRow(m);
         menuRow(m, R.drawable.ic_help, "راه‌اندازی ویجت", null, guideDone() < 4 ? "dot" : null, R.id.pg_guide);
@@ -591,6 +597,12 @@ public class MainActivity extends Activity {
         dlMsg = sheetText("بعد از دانلود، صفحه‌ی نصب اندروید باز می‌شود؛ «به‌روزرسانی» را بزنید.", 13, false, col(R.color.c_mut));
         dlMsg.setPadding(0, dp(18), 0, dp(4)); b.addView(dlMsg);
         showSheet(b);
+    }
+
+    /** ردیف منو که به جای رفتن به یک صفحه، کاری انجام می‌دهد */
+    void actRow(LinearLayout m, int ico, String title, final Runnable r) {
+        menuRow(m, ico, title, null, null, 0);
+        m.getChildAt(m.getChildCount() - 1).setOnClickListener(new View.OnClickListener() { public void onClick(View v) { r.run(); } });
     }
 
     void menuRow(LinearLayout m, int ico, String title, String val, String badge, final int target) {
@@ -896,6 +908,15 @@ public class MainActivity extends Activity {
         b.setGravity(Gravity.START);
         TextView h = line(ed ? "ویرایش «" + l.get(idx).name + "»" : "افزودن مجموعه", R.color.c_head, true); h.setTextSize(19);
         b.addView(h, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (!ed) {
+            // راه پیشنهادی: ورود با همان حساب داشبورد
+            TextView lg = bigBtn("ورود با نام کاربری و رمز داشبورد", true, new View.OnClickListener() { public void onClick(View v) {
+                closeSheet();
+                startActivity(LiveActivity.intent(MainActivity.this, null).putExtra("login", true));
+            } });
+            b.addView(lg);
+            TextView or = line("یا با لینک ویجت (روش قبلی):", R.color.c_mut, true); or.setTextSize(13); or.setPadding(0, dp(16), 0, 0); b.addView(or);
+        }
         TextView hint = line("در داشبورد، صفحه‌ی «ویجت» را باز کنید و لینک «داده‌ی خام» را کپی کنید.", R.color.c_mut, false);
         hint.setTextSize(13); hint.setLineSpacing(dp(3), 1f); b.addView(hint);
 

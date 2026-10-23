@@ -228,7 +228,7 @@ public class LiveWidget extends AppWidgetProvider {
         tt(v, tx, R.id.status, off && last != null ? "قطع — آخرین داده " + fa(at) : (at.isEmpty() ? "" : "به‌روزرسانی " + fa(at)));
 
         String u = site == null ? "" : Sites.jsonUrl(site.url);
-        Intent openI = u.isEmpty() ? new Intent(ctx, MainActivity.class) : new Intent(Intent.ACTION_VIEW, Uri.parse(u.substring(0, u.length() - 5)));
+        Intent openI = u.isEmpty() ? new Intent(ctx, MainActivity.class) : LiveActivity.intent(ctx, site.url);   // گزارش زنده داخل برنامه
         openI.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         boolean tapRefresh = "refresh".equals(p.getString("tap", "open")) && !u.isEmpty();
         PendingIntent tapI = tapRefresh ? refreshIntent(ctx) : PendingIntent.getActivity(ctx, 100 + widgetId, openI,
